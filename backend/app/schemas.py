@@ -67,3 +67,97 @@ class CenterOut(BaseModel):
     name: str
     slug: str
     is_active: bool
+
+
+# ---------- Ta'lim & Guruhlar ----------
+class GroupCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    schedule: str | None = "Du-Chor-Ju 18:00"
+    monthly_fee: int = 450000
+    teacher_id: int | None = None
+
+
+class GroupOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    schedule: str | None
+    monthly_fee: int
+    teacher_id: int | None
+    is_active: bool
+
+
+class GroupStudentAdd(BaseModel):
+    student_id: int
+
+
+class TestAttemptSync(BaseModel):
+    phone: str
+    score: int
+    total: int
+    level: str
+    details: dict | None = None
+
+
+# ---------- Davomat ----------
+class SessionCreate(BaseModel):
+    group_id: int
+    held_on: str | None = None  # YYYY-MM-DD, None bo'lsa bugun
+
+
+class SessionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    group_id: int
+    teacher_id: int
+    held_on: str
+    finalized: bool
+
+
+class QRGenerateOut(BaseModel):
+    session_id: int
+    token: str
+    expires_at: str
+
+
+class QRScanIn(BaseModel):
+    token: str
+
+
+class AttendanceRecordOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    session_id: int
+    student_id: int
+    status: str
+    source: str
+    marked_at: str
+
+
+# ---------- Moliya ----------
+class PaymentCreate(BaseModel):
+    student_id: int
+    group_id: int | None = None
+    amount: int = Field(gt=0)
+    period: str = Field(pattern=r"^\d{4}-\d{2}$")  # "2026-09"
+    method: str = "naqd"
+    note: str | None = None
+
+
+class PaymentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    student_id: int
+    group_id: int | None
+    amount: int
+    period: str
+    method: str | None
+    note: str | None
+    created_at: str
+
+
+class FinanceSummaryOut(BaseModel):
+    total_revenue: int
+    payment_count: int
+    period: str
+

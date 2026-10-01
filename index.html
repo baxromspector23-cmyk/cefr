@@ -1,402 +1,1276 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="uz" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Platform SaaS — Boshqaruv Paneli</title>
+    <title>English Platform SaaS — Ultimate Suite</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.25s ease-out forwards',
+                        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+                            '50%': { opacity: '0.8', transform: 'scale(1.05)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 & QR library -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+
+        .glass-panel {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
-    <!-- Navbar -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/90 dark:bg-slate-950/90 glass-panel">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchNav('dashboard')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-brand-500 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 ring-2 ring-indigo-400/20">
                     <i class="fa-solid fa-graduation-cap text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold text-slate-900 leading-tight">English Platform</h1>
-                    <p class="text-xs text-indigo-600 font-medium tracking-wide">Multi-Tenant SaaS • 1-bosqich</p>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">English Platform</span>
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">SaaS v2.0</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Multi-Tenancy • LMS • CRM • Finance</p>
                 </div>
             </div>
 
-            <!-- Health Status & Actions -->
-            <div class="flex items-center space-x-4">
-                <div id="healthBadge" class="flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 transition-all">
-                    <span class="w-2 h-2 rounded-full bg-amber-500 mr-2 animate-pulse" id="healthDot"></span>
-                    <span id="healthText">Server tekshirilmoqda...</span>
-                </div>
-                <a href="http://localhost:8000/docs" target="_blank" class="hidden sm:inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-                    <i class="fa-solid fa-book-open mr-1.5 text-indigo-500"></i> Swagger API Docs
-                </a>
-                <button id="logoutBtn" onclick="logout()" class="hidden px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition border border-rose-200">
-                    <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Chiqish
+            <!-- Header Center: Nav Links -->
+            <nav class="hidden md:flex items-center space-x-1 text-xs font-semibold">
+                <button onclick="switchNav('dashboard')" id="nav-dashboard" class="px-3.5 py-2 rounded-xl transition nav-btn bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
+                    <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
                 </button>
+                <button onclick="switchNav('centers')" id="nav-centers" class="px-3.5 py-2 rounded-xl transition nav-btn text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-building-columns mr-1.5"></i> Markazlar
+                </button>
+                <button onclick="switchNav('users')" id="nav-users" class="px-3.5 py-2 rounded-xl transition nav-btn text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-users mr-1.5"></i> Foydalanuvchilar
+                </button>
+                <button onclick="switchNav('groups')" id="nav-groups" class="px-3.5 py-2 rounded-xl transition nav-btn text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-layer-group mr-1.5"></i> Guruhlar
+                </button>
+                <button onclick="switchNav('attendance')" id="nav-attendance" class="px-3.5 py-2 rounded-xl transition nav-btn text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-qrcode mr-1.5"></i> QR Davomat
+                </button>
+                <button onclick="switchNav('finance')" id="nav-finance" class="px-3.5 py-2 rounded-xl transition nav-btn text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-wallet mr-1.5"></i> Moliya
+                </button>
+                <button onclick="switchNav('cefrtest')" id="nav-cefrtest" class="px-3.5 py-2 rounded-xl transition nav-btn text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-spell-check mr-1.5 text-amber-400"></i> CEFR Test
+                </button>
+            </nav>
+
+            <!-- Actions (Theme Toggle, Health, Auth) -->
+            <div class="flex items-center space-x-3">
+                
+                <!-- Health Badge -->
+                <div id="healthBadge" class="hidden sm:flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
+                    <span id="healthText">Online (200)</span>
+                </div>
+
+                <!-- Dark/Light Theme Toggle -->
+                <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white bg-slate-800/80 transition active:scale-95 shadow-sm" title="Rejimni almashtirish">
+                    <i class="fa-solid fa-sun text-sm text-amber-400 dark:hidden"></i>
+                    <i class="fa-solid fa-moon text-sm text-indigo-300 hidden dark:block"></i>
+                </button>
+
+                <!-- Swagger Link -->
+                <a href="http://localhost:8000/docs" target="_blank" class="hidden lg:flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Swagger OpenAPI">
+                    <i class="fa-solid fa-code text-indigo-400 mr-1.5"></i> API Docs
+                </a>
+
+                <!-- User or Login Button -->
+                <div id="userProfileHeader" class="flex items-center space-x-2">
+                    <button id="headerLoginBtn" onclick="openLoginModal()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-sm shadow-indigo-600/30">
+                        <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> Kirish
+                    </button>
+                    <div id="headerUserInfo" class="hidden flex items-center space-x-2">
+                        <div class="text-right hidden sm:block">
+                            <p id="headerUserName" class="text-xs font-bold leading-tight">Admin</p>
+                            <p id="headerUserRole" class="text-[10px] text-indigo-400 font-mono">super_admin</p>
+                        </div>
+                        <button onclick="logout()" class="w-8 h-8 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition" title="Chiqish">
+                            <i class="fa-solid fa-power-off text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
             </div>
+
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
 
-        <!-- Banner / Hero -->
-        <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-2xl p-6 sm:p-8 text-white mb-8 shadow-xl relative overflow-hidden">
-            <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">
-                <i class="fa-solid fa-cubes"></i>
-            </div>
-            <div class="relative z-10 max-w-2xl">
-                <span class="px-3 py-1 rounded-full bg-indigo-500/30 text-indigo-200 text-xs font-medium uppercase tracking-wider inline-block mb-3 border border-indigo-400/20">
-                    Backend Core Tizimi Faol
-                </span>
-                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">Ingliz tili markazlari boshqaruv tizimi</h2>
-                <p class="text-slate-300 text-sm leading-relaxed mb-4">
-                    FastAPI, SQLAlchemy 2.0, JWT autentifikatsiya, Multi-Tenancy ma'lumotlar bazasi va rollar tizimi to‘liq ishga tushirildi.
-                </p>
-                <div class="flex flex-wrap gap-2 text-xs">
-                    <span class="bg-white/10 px-2.5 py-1 rounded-md backdrop-blur border border-white/10"><i class="fa-solid fa-shield-halved mr-1 text-emerald-400"></i> JWT Auth Rotation</span>
-                    <span class="bg-white/10 px-2.5 py-1 rounded-md backdrop-blur border border-white/10"><i class="fa-solid fa-building-columns mr-1 text-sky-400"></i> Multi-Tenancy</span>
-                    <span class="bg-white/10 px-2.5 py-1 rounded-md backdrop-blur border border-white/10"><i class="fa-solid fa-list-check mr-1 text-amber-400"></i> 14/14 Test Passed</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-            <!-- Left: Login or User Info -->
-            <div class="lg:col-span-4 space-y-6">
-                <!-- Login Box -->
-                <div id="loginCard" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                            <i class="fa-solid fa-lock"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900">Tizimga kirish</h3>
-                            <p class="text-xs text-slate-500">Super admin yoki Markaz admini</p>
-                        </div>
+        <!-- ==================== 1. TAB: DASHBOARD ==================== -->
+        <section id="view-dashboard" class="space-y-6 animate-slide-up">
+            
+            <!-- Hero Banner -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/20 p-6 sm:p-8 shadow-2xl">
+                <div class="absolute -right-12 -bottom-12 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 max-w-3xl">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-3">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Platforma Core v2.0 Ishchi Holatda</span>
                     </div>
-
-                    <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Telefon raqam</label>
-                            <input type="text" id="phone" value="+998900000000" class="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Parol</label>
-                            <input type="password" id="password" value="Kamida8belgi!" class="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Markaz slug (ixtiyoriy)</label>
-                            <input type="text" id="centerSlug" placeholder="Super admin uchun bo'sh qoldiring" class="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
-                        </div>
-                        <button type="submit" id="loginSubmitBtn" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow-md shadow-indigo-100 transition flex items-center justify-center">
-                            <span>Kirish</span>
-                            <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                    <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">Ingliz Tili Markazlari boshqaruv markazi</h1>
+                    <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-5">
+                        O‘quv markazlari (Multi-Tenant), guruhlar, QR-kodli davomat, to‘lovlar hisobi va Telegram CEFR Web App bitta zamonaviy panelda.
+                    </p>
+                    <div class="flex flex-wrap gap-2.5">
+                        <button onclick="openCreateCenterModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition flex items-center space-x-2 active:scale-95">
+                            <i class="fa-solid fa-plus"></i> <span>Yangi Markaz Ochish</span>
                         </button>
-                    </form>
-
-                    <div class="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500">
-                        <p class="font-semibold text-slate-700 mb-1"><i class="fa-solid fa-key text-amber-500 mr-1"></i> Standart hisob:</p>
-                        <p>Tel: <code class="text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded font-mono">+998900000000</code></p>
-                        <p>Parol: <code class="text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded font-mono">Kamida8belgi!</code></p>
-                    </div>
-                </div>
-
-                <!-- User Profile Card (Shown when logged in) -->
-                <div id="userProfileCard" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <div class="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xl font-bold">
-                            <i class="fa-solid fa-user-check"></i>
-                        </div>
-                        <div>
-                            <h3 id="profileName" class="font-bold text-slate-900">Platform Owner</h3>
-                            <span id="profileRole" class="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full mt-0.5">super_admin</span>
-                        </div>
-                    </div>
-                    <div class="space-y-2 text-xs text-slate-600 pt-3 border-t border-slate-100">
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Telefon:</span>
-                            <span id="profilePhone" class="font-semibold text-slate-800"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Holat:</span>
-                            <span class="text-emerald-600 font-semibold flex items-center"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Autentifikatsiya qilingan</span>
-                        </div>
+                        <button onclick="openCreateGroupModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition flex items-center space-x-2 active:scale-95">
+                            <i class="fa-solid fa-layer-group text-indigo-400"></i> <span>Guruh Yaratish</span>
+                        </button>
+                        <a href="https://t.me/englishcefrolamizbot" target="_blank" class="px-4 py-2 rounded-xl text-xs font-bold bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 transition flex items-center space-x-2">
+                            <i class="fa-brands fa-telegram"></i> <span>Telegram Bot: @englishcefrolamizbot</span>
+                        </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Right: Content & API Actions -->
-            <div class="lg:col-span-8 space-y-6">
-
-                <!-- Centers Management -->
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-5 gap-3">
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-base">O‘quv Markazlari (Tenants)</h3>
-                            <p class="text-xs text-slate-500">Platformaga biriktirilgan markazlar ro‘yxati</p>
+            <!-- KPI Metric Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <div class="bg-slate-800/50 border border-slate-800 hover:border-indigo-500/40 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-slate-400">Jami Markazlar</span>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-base">
+                            <i class="fa-solid fa-building-columns"></i>
                         </div>
-                        <button onclick="openCreateCenterModal()" class="inline-flex items-center px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition">
-                            <i class="fa-solid fa-plus mr-1.5"></i> Yangi markaz qo‘shish
-                        </button>
                     </div>
-
-                    <div id="centersList" class="space-y-3">
-                        <div class="p-8 text-center text-slate-400 text-sm">
-                            <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-indigo-500"></i>
-                            <p>Markazlar yuklanmoqda yoki tizimga kiring...</p>
-                        </div>
+                    <div class="flex items-baseline space-x-2">
+                        <span class="text-2xl font-black text-white" id="statCentersCount">0</span>
+                        <span class="text-[11px] text-emerald-400 font-semibold flex items-center"><i class="fa-solid fa-arrow-up text-[9px] mr-1"></i>Faol</span>
                     </div>
                 </div>
 
-                <!-- API Fast Tester / Response Visualizer -->
-                <div class="bg-slate-900 rounded-2xl p-6 text-slate-200 shadow-sm">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                <div class="bg-slate-800/50 border border-slate-800 hover:border-sky-500/40 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-slate-400">Foydalanuvchilar</span>
+                        <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-base">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline space-x-2">
+                        <span class="text-2xl font-black text-white" id="statUsersCount">0</span>
+                        <span class="text-[11px] text-slate-400">Ustoz & Talaba</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/50 border border-slate-800 hover:border-violet-500/40 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-slate-400">O‘quv Guruhlari</span>
+                        <div class="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center text-base">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline space-x-2">
+                        <span class="text-2xl font-black text-white" id="statGroupsCount">0</span>
+                        <span class="text-[11px] text-indigo-400">CEFR kurslari</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/50 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-slate-400">Oylik Tushum</span>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-base">
+                            <i class="fa-solid fa-coins"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline space-x-2">
+                        <span class="text-xl font-black text-emerald-400" id="statRevenueAmount">0 so‘m</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Two-column Section: Live Console & Fast Shortcuts -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Quick Action Widgets -->
+                <div class="lg:col-span-6 bg-slate-800/40 border border-slate-800 rounded-3xl p-6 space-y-4">
+                    <h3 class="text-sm font-bold text-white flex items-center">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-2 text-indigo-400"></i> Tezkor Boshqaruv
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="switchNav('attendance')" class="p-4 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 transition text-left group">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-qrcode"></i>
+                            </div>
+                            <h4 class="text-xs font-bold text-white">QR Davomat boshlash</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Dars uchun yangi QR token</p>
+                        </button>
+                        <button onclick="openCreatePaymentModal()" class="p-4 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 hover:border-emerald-500/50 transition text-left group">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-receipt"></i>
+                            </div>
+                            <h4 class="text-xs font-bold text-white">To‘lov Qabul Qilish</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">O‘quvchi to‘lovini kiritish</p>
+                        </button>
+                        <button onclick="openCreateUserModal()" class="p-4 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 hover:border-sky-500/50 transition text-left group">
+                            <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-user-plus"></i>
+                            </div>
+                            <h4 class="text-xs font-bold text-white">Yangi O‘quvchi / Ustoz</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Tizimga foydalanuvchi qo‘shish</p>
+                        </button>
+                        <button onclick="switchNav('cefrtest')" class="p-4 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 hover:border-amber-500/50 transition text-left group">
+                            <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-pen-ruler"></i>
+                            </div>
+                            <h4 class="text-xs font-bold text-white">CEFR Test Sinovi</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Grammatika & Reading testi</p>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Real-time Terminal Log -->
+                <div class="lg:col-span-6 bg-slate-950 border border-slate-800 rounded-3xl p-5 flex flex-col font-mono text-xs">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-2">
                         <div class="flex items-center space-x-2">
-                            <div class="w-3 h-3 rounded-full bg-rose-500"></div>
-                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
-                            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-                            <span class="text-xs font-mono text-slate-400 ml-2">So‘nggi API javobi (Console)</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <span class="text-slate-400 text-[11px] ml-2">Tizim Konsoli (Live API Log)</span>
                         </div>
-                        <span id="responseStatus" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400">READY</span>
+                        <button onclick="clearConsole()" class="text-[10px] text-slate-500 hover:text-slate-300">Tozalash</button>
                     </div>
-                    <pre id="apiConsole" class="text-xs font-mono text-emerald-400 overflow-x-auto max-h-48 p-2">Tizim ishga tushirishga tayyor. Markazlar yoki login tugmasini bosing.</pre>
+                    <pre id="consoleOutput" class="flex-1 max-h-56 overflow-y-auto text-emerald-400 leading-relaxed text-[11px]">Backend API ulangan. Tizim tayyor.</pre>
                 </div>
-
             </div>
 
-        </div>
+        </section>
+
+        <!-- ==================== 2. TAB: O‘QUV MARKAZLARI ==================== -->
+        <section id="view-centers" class="hidden space-y-5 animate-slide-up">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                <div>
+                    <h2 class="text-lg font-bold text-white">O‘quv Markazlari Ro‘yxati (Tenants)</h2>
+                    <p class="text-xs text-slate-400">Har bir o‘quv markazining mustaqil ma'lumotlar maydoni</p>
+                </div>
+                <button onclick="openCreateCenterModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                    <i class="fa-solid fa-plus"></i> <span>Yangi Markaz</span>
+                </button>
+            </div>
+
+            <div id="centersTableContainer" class="bg-slate-800/40 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+                <div class="p-8 text-center text-slate-400 text-xs">Yuklanmoqda...</div>
+            </div>
+        </section>
+
+        <!-- ==================== 3. TAB: FOYDALANUVCHILAR ==================== -->
+        <section id="view-users" class="hidden space-y-5 animate-slide-up">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                <div>
+                    <h2 class="text-lg font-bold text-white">Foydalanuvchilar Boshqaruvi</h2>
+                    <p class="text-xs text-slate-400">Ustozlar, talabalar va ma'murlar</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="openCreateUserModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                        <i class="fa-solid fa-user-plus"></i> <span>Foydalanuvchi Qo‘shish</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="usersTableContainer" class="bg-slate-800/40 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+                <div class="p-8 text-center text-slate-400 text-xs">Yuklanmoqda...</div>
+            </div>
+        </section>
+
+        <!-- ==================== 4. TAB: GURUHLAR VA KURSLAR ==================== -->
+        <section id="view-groups" class="hidden space-y-5 animate-slide-up">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                <div>
+                    <h2 class="text-lg font-bold text-white">O‘quv Guruhlari (CEFR Groups)</h2>
+                    <p class="text-xs text-slate-400">Guruhlar jadvali, dars soatlari va to‘lov summasi</p>
+                </div>
+                <button onclick="openCreateGroupModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                    <i class="fa-solid fa-plus"></i> <span>Yangi Guruh Yaratish</span>
+                </button>
+            </div>
+
+            <div id="groupsTableContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="col-span-full p-8 text-center text-slate-400 text-xs">Guruhlar yuklanmoqda...</div>
+            </div>
+        </section>
+
+        <!-- ==================== 5. TAB: QR DAVOMAT ==================== -->
+        <section id="view-attendance" class="hidden space-y-5 animate-slide-up">
+            <div class="pb-3 border-b border-slate-800">
+                <h2 class="text-lg font-bold text-white">QR-kodli Jonli Davomat</h2>
+                <p class="text-xs text-slate-400">Dars boshlanganda ekraningizda QR-kod hosil qiling, o‘quvchilar telefon orqali skaner qilsin</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- QR Generator Box -->
+                <div class="lg:col-span-5 bg-slate-800/40 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-xl">
+                    <h3 class="text-sm font-bold text-white">QR Davomat Generatori</h3>
+                    
+                    <div class="space-y-3 text-left">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Guruhni tanlang</label>
+                            <select id="qrGroupSelect" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"></select>
+                        </div>
+                        <button onclick="generateAttendanceQR()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-qrcode"></i> <span>Dars QR Kodini Chiqarish</span>
+                        </button>
+                    </div>
+
+                    <!-- QR Display Box -->
+                    <div id="qrDisplayBox" class="hidden p-4 rounded-2xl bg-white mx-auto max-w-[240px] shadow-2xl flex flex-col items-center justify-center">
+                        <div id="qrcode"></div>
+                        <p class="text-[10px] text-slate-800 font-bold mt-2">Darsga kelganingizni belgilang</p>
+                    </div>
+
+                    <div id="qrTimerBox" class="hidden text-xs text-amber-400 font-mono">
+                        <i class="fa-solid fa-hourglass-half mr-1"></i> QR kod 5 daqiqa davomida faol
+                    </div>
+                </div>
+
+                <!-- Live Attendance Records -->
+                <div class="lg:col-span-7 bg-slate-800/40 border border-slate-800 rounded-3xl p-6 space-y-3 shadow-xl">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+                        <h3 class="text-sm font-bold text-white">Davomat Jurnali</h3>
+                        <span class="text-xs text-slate-400 font-mono" id="attendanceLiveCount">0 o‘quvchi belgilandi</span>
+                    </div>
+                    <div id="attendanceRecordsList" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+                        <div class="p-8 text-center text-slate-500 text-xs">Hozircha faol sessiya tanlanmadi.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 6. TAB: MOLIYA VA TO‘LOVLAR ==================== -->
+        <section id="view-finance" class="hidden space-y-5 animate-slide-up">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                <div>
+                    <h2 class="text-lg font-bold text-white">Moliya va To‘lovlar Nazorati</h2>
+                    <p class="text-xs text-slate-400">O‘quvchilar oylik to‘lovlari va tushumlar hisoboti</p>
+                </div>
+                <button onclick="openCreatePaymentModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                    <i class="fa-solid fa-receipt"></i> <span>Yangi To‘lov Kiritish</span>
+                </button>
+            </div>
+
+            <div id="paymentsTableContainer" class="bg-slate-800/40 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+                <div class="p-8 text-center text-slate-400 text-xs">To‘lovlar yuklanmoqda...</div>
+            </div>
+        </section>
+
+        <!-- ==================== 7. TAB: CEFR TEST (INTERAKTIV) ==================== -->
+        <section id="view-cefrtest" class="hidden space-y-5 animate-slide-up">
+            <div class="max-w-2xl mx-auto space-y-5">
+                <div class="text-center space-y-2">
+                    <span class="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold">
+                        CEFR English Diagnostic Test
+                    </span>
+                    <h2 class="text-2xl font-black text-white">Ingliz tili darajasini aniqlash</h2>
+                    <p class="text-xs text-slate-400">Savollarga javob bering va natijangizni to‘g‘ridan-to‘g‘ri markaz bazasiga yozing.</p>
+                </div>
+
+                <!-- Test Runner Container -->
+                <div id="webTestCard" class="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5">
+                    <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+                        <span id="wtStep">Savol 1 / 10</span>
+                        <span id="wtLevel" class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold">A1</span>
+                    </div>
+
+                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                        <div id="wtProgressBar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-2 rounded-full transition-all duration-300" style="width: 10%"></div>
+                    </div>
+
+                    <div class="py-2">
+                        <h3 id="wtQuestion" class="text-lg font-bold text-white leading-snug">My name ___ Ali.</h3>
+                    </div>
+
+                    <div id="wtOptions" class="space-y-2.5"></div>
+
+                    <div id="wtExplanation" class="hidden p-3 rounded-2xl text-xs leading-relaxed border"></div>
+                </div>
+
+                <!-- Test Finished Screen -->
+                <div id="wtResultCard" class="hidden bg-slate-800/60 border border-slate-700 rounded-3xl p-8 text-center space-y-5 shadow-2xl">
+                    <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl mx-auto">
+                        🏆
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sizning Natijangiz</span>
+                        <h3 class="text-3xl font-black text-white mt-1" id="wtFinalLevel">B1 Level</h3>
+                        <p class="text-xs text-slate-400 mt-1" id="wtFinalScore">10 ta savoldan 9 tasiga to‘g‘ri javob berildi.</p>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-700 space-y-3 text-left">
+                        <label class="block text-xs font-semibold text-slate-400">Natijani o‘quv markazi bazasiga saqlash uchun telefoningizni tasdiqlang:</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="wtSyncPhone" value="+998900000000" class="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none">
+                            <button onclick="syncTestResultToBackend()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow">
+                                <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Bazaga Yozish
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="startWebTest()" class="text-xs font-bold text-slate-400 hover:text-white underline">Qaytadan topshirish</button>
+                </div>
+            </div>
+        </section>
 
     </main>
 
-    <!-- Create Center Modal -->
-    <div id="centerModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                <h3 class="font-bold text-slate-900 text-base">Yangi O‘quv Markazi</h3>
-                <button onclick="closeCreateCenterModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-slide-up">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="font-bold text-white text-base">Tizimga Kirish</h3>
+                <button onclick="closeModal('loginModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form onsubmit="handleCreateCenter(event)" class="space-y-4">
+            <form onsubmit="handleModalLogin(event)" class="space-y-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Markaz nomi</label>
-                    <input type="text" id="centerName" placeholder="Masalan: Cambridge LC" class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Telefon</label>
+                    <input type="text" id="mPhone" value="+998900000000" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Slug (URL uchun noyob nom)</label>
-                    <input type="text" id="newCenterSlug" placeholder="masalan: cambridge" class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Parol</label>
+                    <input type="password" id="mPass" value="Kamida8belgi!" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Admin telefon raqami</label>
-                    <input type="text" id="adminPhone" placeholder="+998911234567" class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Markaz slug (ixtiyoriy)</label>
+                    <input type="text" id="mSlug" placeholder="Super admin uchun bo'sh" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-md transition">Kirish</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Center Modal -->
+    <div id="centerModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-slide-up">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="font-bold text-white text-base">Yangi O‘quv Markazi Ochish</h3>
+                <button onclick="closeModal('centerModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleCreateCenter(event)" class="space-y-3 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Markaz nomi</label>
+                    <input type="text" id="cName" placeholder="Masalan: Cambridge LC" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Admin paroli</label>
-                    <input type="password" id="adminPassword" value="Parol12345!" class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Slug (noyob URL nomi)</label>
+                    <input type="text" id="cSlug" placeholder="cambridge" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
                 </div>
-                <div class="flex justify-end space-x-3 pt-3">
-                    <button type="button" onclick="closeCreateCenterModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Bekor qilish</button>
-                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow">Yaratish</button>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Admin F.I.Sh.</label>
+                    <input type="text" id="cAdminName" placeholder="Alisher Qodirov" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Admin telefoni</label>
+                    <input type="text" id="cAdminPhone" placeholder="+998901234567" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Admin paroli</label>
+                    <input type="password" id="cAdminPass" value="Parol12345!" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('centerModal')" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Bekor qilish</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow">Yaratish</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
-            English Platform &copy; 2026 • SaaS Architecture Core v1.0
+    <!-- Create Group Modal -->
+    <div id="groupModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-slide-up">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="font-bold text-white text-base">Yangi Guruh Yaratish</h3>
+                <button onclick="closeModal('groupModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleCreateGroup(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Guruh nomi</label>
+                    <input type="text" id="gName" placeholder="IELTS 7.0 Intensive" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Dars jadvali</label>
+                    <input type="text" id="gSchedule" value="Du-Chor-Ju 18:30" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Oylik to‘lov (so‘m)</label>
+                    <input type="number" id="gFee" value="500000" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('groupModal')" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Bekor qilish</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow">Saqlash</button>
+                </div>
+            </form>
         </div>
-    </footer>
+    </div>
 
+    <!-- Create User Modal -->
+    <div id="userModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-slide-up">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="font-bold text-white text-base">Foydalanuvchi Qo‘shish</h3>
+                <button onclick="closeModal('userModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleCreateUser(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">To‘liq Ism (F.I.Sh.)</label>
+                    <input type="text" id="uName" placeholder="Botir Zokirov" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Telefon raqam</label>
+                    <input type="text" id="uPhone" placeholder="+998901234567" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Rol</label>
+                    <select id="uRole" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none">
+                        <option value="student">O‘quvchi (Student)</option>
+                        <option value="teacher">O‘qituvchi (Teacher)</option>
+                        <option value="center_admin">Markaz Admini</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Parol</label>
+                    <input type="password" id="uPass" value="Talaba12345!" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('userModal')" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Bekor qilish</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow">Qo‘shish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Payment Modal -->
+    <div id="paymentModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-slide-up">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="font-bold text-white text-base">To‘lov Qabul Qilish</h3>
+                <button onclick="closeModal('paymentModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleCreatePayment(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">O‘quvchi ID raqami</label>
+                    <input type="number" id="pStudentId" placeholder="1" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Summa (so‘m)</label>
+                    <input type="number" id="pAmount" value="450000" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Davr (YYYY-MM)</label>
+                    <input type="text" id="pPeriod" value="2026-09" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">To‘lov usuli</label>
+                    <select id="pMethod" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white outline-none">
+                        <option value="naqd">Naqd pul</option>
+                        <option value="karta">Plastik karta</option>
+                        <option value="payme">Payme</option>
+                        <option value="click">Click</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('paymentModal')" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Bekor qilish</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow">Qayd etish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
     <script>
-        const API_BASE = 'http://localhost:8000';
-        let accessToken = localStorage.getItem('token') || '';
+        const API_URL = 'http://localhost:8000';
+        let token = localStorage.getItem('access_token') || '';
+        let currentUser = null;
 
-        async function checkHealth() {
-            try {
-                const res = await fetch(`${API_BASE}/health`);
-                if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById('healthBadge').className = 'flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200';
-                    document.getElementById('healthDot').className = 'w-2 h-2 rounded-full bg-emerald-500 mr-2';
-                    document.getElementById('healthText').textContent = 'Server Faol (200 OK)';
-                } else {
-                    throw new Error('Not 200');
-                }
-            } catch (err) {
-                document.getElementById('healthBadge').className = 'flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200';
-                document.getElementById('healthDot').className = 'w-2 h-2 rounded-full bg-rose-500 mr-2';
-                document.getElementById('healthText').textContent = 'Server to‘xtagan';
+        // Theme Toggle (Dark / Light)
+        function initTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') {
+                document.documentElement.classList.remove('dark');
+                document.body.className = 'bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white';
+            } else {
+                document.documentElement.classList.add('dark');
+                document.body.className = 'bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white';
             }
         }
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            const phone = document.getElementById('phone').value;
-            const password = document.getElementById('password').value;
-            const center_slug = document.getElementById('centerSlug').value || null;
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                document.body.className = 'bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white';
+                showToast('Kunduzgi rejimga o‘tildi ☀️', 'info');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                document.body.className = 'bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white';
+                showToast('Tungi rejimga o‘tildi 🌙', 'info');
+            }
+        }
 
-            logConsole('Kirish so‘rovi yuborilmoqda: POST /auth/login ...');
+        // Navigation Switching
+        function switchNav(target) {
+            const tabs = ['dashboard', 'centers', 'users', 'groups', 'attendance', 'finance', 'cefrtest'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`view-${t}`);
+                const btn = document.getElementById(`nav-${t}`);
+                if (el) el.classList.add('hidden');
+                if (btn) btn.className = 'px-3.5 py-2 rounded-xl transition nav-btn text-slate-400 hover:text-white hover:bg-slate-800';
+            });
+            const activeEl = document.getElementById(`view-${target}`);
+            const activeBtn = document.getElementById(`nav-${target}`);
+            if (activeEl) activeEl.classList.remove('hidden');
+            if (activeBtn) activeBtn.className = 'px-3.5 py-2 rounded-xl transition nav-btn bg-indigo-600 text-white shadow-sm shadow-indigo-600/30';
+
+            // Load data when tab opened
+            if (target === 'centers') loadCenters();
+            if (target === 'users') loadUsers();
+            if (target === 'groups') loadGroups();
+            if (target === 'attendance') initAttendanceTab();
+            if (target === 'finance') loadFinance();
+            if (target === 'cefrtest') startWebTest();
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const icons = {
+                success: '<i class="fa-solid fa-circle-check text-emerald-400 mr-2"></i>',
+                error: '<i class="fa-solid fa-circle-xmark text-rose-400 mr-2"></i>',
+                info: '<i class="fa-solid fa-circle-info text-indigo-400 mr-2"></i>',
+            };
+            const borderColors = {
+                success: 'border-emerald-500/30 bg-slate-900/90 text-slate-100',
+                error: 'border-rose-500/30 bg-slate-900/90 text-slate-100',
+                info: 'border-indigo-500/30 bg-slate-900/90 text-slate-100'
+            };
+            toast.className = `flex items-center px-4 py-3 rounded-2xl border text-xs font-semibold shadow-2xl glass-panel animate-slide-up ${borderColors[type] || borderColors.info}`;
+            toast.innerHTML = `${icons[type] || icons.info} <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function logConsole(msg) {
+            const consoleEl = document.getElementById('consoleOutput');
+            const time = new Date().toLocaleTimeString();
+            consoleEl.textContent = `[${time}] ${typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)}\n` + consoleEl.textContent;
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleOutput').textContent = 'Konsol tozalandi.';
+        }
+
+        // Modals
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openLoginModal() { openModal('loginModal'); }
+        function openCreateCenterModal() {
+            if (!token) { showToast('Avval tizimga kiring', 'error'); return openLoginModal(); }
+            openModal('centerModal');
+        }
+        function openCreateGroupModal() {
+            if (!token) { showToast('Avval tizimga kiring', 'error'); return openLoginModal(); }
+            openModal('groupModal');
+        }
+        function openCreateUserModal() {
+            if (!token) { showToast('Avval tizimga kiring', 'error'); return openLoginModal(); }
+            openModal('userModal');
+        }
+        function openCreatePaymentModal() {
+            if (!token) { showToast('Avval tizimga kiring', 'error'); return openLoginModal(); }
+            openModal('paymentModal');
+        }
+
+        // Authentication
+        async function handleModalLogin(e) {
+            e.preventDefault();
+            const phone = document.getElementById('mPhone').value;
+            const password = document.getElementById('mPass').value;
+            const center_slug = document.getElementById('mSlug').value || null;
+
             try {
-                const res = await fetch(`${API_BASE}/auth/login`, {
+                const res = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phone, password, center_slug })
                 });
                 const data = await res.json();
-                logConsole(data, res.status);
-
                 if (res.ok) {
-                    accessToken = data.access_token;
-                    localStorage.setItem('token', accessToken);
-                    await loadUserProfile();
-                    await loadCenters();
+                    token = data.access_token;
+                    localStorage.setItem('access_token', token);
+                    closeModal('loginModal');
+                    showToast('Xush kelibsiz! Tizimga muvaffaqiyatli kirildi.', 'success');
+                    logConsole(`Kirildi: ${phone}`);
+                    await loadCurrentUser();
+                    await refreshDashboardStats();
                 } else {
-                    alert('Kirishda xatolik: ' + (data.detail || JSON.stringify(data)));
+                    showToast(data.detail || 'Xatolik yuz berdi', 'error');
                 }
             } catch (err) {
-                logConsole('Ulanishda xato: ' + err.message, 500);
+                showToast('Serverga ulanishda xato: ' + err.message, 'error');
             }
         }
 
-        async function loadUserProfile() {
-            if (!accessToken) return;
+        async function loadCurrentUser() {
+            if (!token) return;
             try {
-                const res = await fetch(`${API_BASE}/users/me`, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                const res = await fetch(`${API_URL}/users/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
-                    const user = await res.json();
-                    document.getElementById('loginCard').classList.add('hidden');
-                    document.getElementById('userProfileCard').classList.remove('hidden');
-                    document.getElementById('logoutBtn').classList.remove('hidden');
-                    document.getElementById('profileName').textContent = user.full_name;
-                    document.getElementById('profileRole').textContent = user.role;
-                    document.getElementById('profilePhone').textContent = user.phone;
+                    currentUser = await res.json();
+                    document.getElementById('headerLoginBtn').classList.add('hidden');
+                    document.getElementById('headerUserInfo').classList.remove('hidden');
+                    document.getElementById('headerUserName').textContent = currentUser.full_name;
+                    document.getElementById('headerUserRole').textContent = currentUser.role;
+                } else {
+                    logout();
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch(e){}
         }
 
+        function logout() {
+            token = '';
+            currentUser = null;
+            localStorage.removeItem('access_token');
+            document.getElementById('headerLoginBtn').classList.remove('hidden');
+            document.getElementById('headerUserInfo').classList.add('hidden');
+            showToast('Tizimdan chiqildi', 'info');
+        }
+
+        // Dashboard Stats
+        async function refreshDashboardStats() {
+            if (!token) return;
+            try {
+                // Centers
+                const cRes = await fetch(`${API_URL}/centers`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (cRes.ok) {
+                    const centers = await cRes.json();
+                    document.getElementById('statCentersCount').textContent = centers.length;
+                }
+                // Groups
+                const gRes = await fetch(`${API_URL}/education/groups`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (gRes.ok) {
+                    const groups = await gRes.json();
+                    document.getElementById('statGroupsCount').textContent = groups.length;
+                }
+                // Finance Summary
+                const fRes = await fetch(`${API_URL}/finance/summary`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (fRes.ok) {
+                    const fin = await fRes.json();
+                    document.getElementById('statRevenueAmount').textContent = fin.total_revenue.toLocaleString('uz-UZ') + ' so‘m';
+                }
+            } catch(e){}
+        }
+
+        // Centers Load & Create
         async function loadCenters() {
-            if (!accessToken) {
-                document.getElementById('centersList').innerHTML = `
-                    <div class="p-8 text-center text-slate-400 text-sm">
-                        <i class="fa-solid fa-lock text-3xl mb-2 text-slate-300"></i>
-                        <p>Markazlar ro‘yxatini ko‘rish uchun tizimga kiring.</p>
-                    </div>`;
+            const container = document.getElementById('centersTableContainer');
+            if (!token) {
+                container.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">Markazlarni ko‘rish uchun tizimga kiring.</div>';
                 return;
             }
-
             try {
-                const res = await fetch(`${API_BASE}/centers`, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const centers = await res.json();
-                logConsole(centers, res.status);
-
+                const res = await fetch(`${API_URL}/centers`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
                 if (res.ok) {
-                    const container = document.getElementById('centersList');
-                    if (centers.length === 0) {
-                        container.innerHTML = `
-                            <div class="p-8 text-center text-slate-400 text-sm">
-                                <i class="fa-solid fa-building text-3xl mb-2 text-slate-300"></i>
-                                <p>Hozircha hech qanday markaz qo‘shilmagan.</p>
-                            </div>`;
+                    if (data.length === 0) {
+                        container.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">Hozircha markazlar mavjud emas.</div>';
                         return;
                     }
-                    container.innerHTML = centers.map(c => `
-                        <div class="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-indigo-200 transition bg-slate-50/50">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-                                    <i class="fa-solid fa-school"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-slate-900 text-sm">${c.name}</h4>
-                                    <p class="text-xs text-slate-500 font-mono">slug: ${c.slug} • id: ${c.id}</p>
-                                </div>
-                            </div>
-                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${c.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
-                                ${c.is_active ? 'Faol' : 'Nofaol'}
-                            </span>
-                        </div>
-                    `).join('');
+                    container.innerHTML = `
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3.5">ID</th>
+                                    <th class="p-3.5">Nomi</th>
+                                    <th class="p-3.5">Slug</th>
+                                    <th class="p-3.5">Holati</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                ${data.map(c => `
+                                    <tr class="hover:bg-slate-800/30 transition">
+                                        <td class="p-3.5 font-mono text-slate-400">${c.id}</td>
+                                        <td class="p-3.5 font-bold text-white">${c.name}</td>
+                                        <td class="p-3.5 font-mono text-indigo-400">${c.slug}</td>
+                                        <td class="p-3.5">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${c.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
+                                                ${c.is_active ? 'Faol' : 'Nofaol'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
                 }
-            } catch (err) {
-                logConsole('Markazlarni yuklashda xato: ' + err.message, 500);
+            } catch(e) {
+                container.innerHTML = '<div class="p-8 text-center text-rose-400 text-xs">Xatolik yuz berdi</div>';
             }
         }
 
         async function handleCreateCenter(e) {
             e.preventDefault();
-            const name = document.getElementById('centerName').value;
-            const slug = document.getElementById('newCenterSlug').value;
-            const admin_phone = document.getElementById('adminPhone').value;
-            const admin_password = document.getElementById('adminPassword').value;
+            const name = document.getElementById('cName').value;
+            const slug = document.getElementById('cSlug').value;
+            const admin_full_name = document.getElementById('cAdminName').value;
+            const phone = document.getElementById('cAdminPhone').value;
+            const admin_password = document.getElementById('cAdminPass').value;
 
             try {
-                const res = await fetch(`${API_BASE}/centers`, {
+                const res = await fetch(`${API_URL}/centers`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${accessToken}`
-                    },
-                    body: JSON.stringify({ name, slug, admin_phone, admin_password })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ name, slug, admin_full_name, phone, admin_password })
                 });
                 const data = await res.json();
-                logConsole(data, res.status);
                 if (res.ok) {
-                    alert('Yangi markaz va uning admini muvaffaqiyatli yaratildi!');
-                    closeCreateCenterModal();
+                    showToast('Yangi markaz ochildi!', 'success');
+                    closeModal('centerModal');
                     loadCenters();
+                    refreshDashboardStats();
                 } else {
-                    alert('Xatolik: ' + (data.detail || JSON.stringify(data)));
+                    showToast(data.detail || 'Xatolik', 'error');
                 }
-            } catch (err) {
-                alert('Xato: ' + err.message);
-            }
+            } catch(err) { showToast(err.message, 'error'); }
         }
 
-        function openCreateCenterModal() {
-            if (!accessToken) {
-                alert('Avval Super Admin sifatida tizimga kiring!');
+        // Users Load & Create
+        async function loadUsers() {
+            const container = document.getElementById('usersTableContainer');
+            if (!token) {
+                container.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">Foydalanuvchilarni ko‘rish uchun tizimga kiring.</div>';
                 return;
             }
-            document.getElementById('centerModal').classList.remove('hidden');
+            try {
+                const res = await fetch(`${API_URL}/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('statUsersCount').textContent = data.length;
+                    container.innerHTML = `
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3.5">F.I.Sh.</th>
+                                    <th class="p-3.5">Telefon</th>
+                                    <th class="p-3.5">Roli</th>
+                                    <th class="p-3.5">Markaz ID</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                ${data.map(u => `
+                                    <tr class="hover:bg-slate-800/30 transition">
+                                        <td class="p-3.5 font-bold text-white">${u.full_name}</td>
+                                        <td class="p-3.5 font-mono text-slate-300">${u.phone}</td>
+                                        <td class="p-3.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">${u.role}</span></td>
+                                        <td class="p-3.5 text-slate-400">${u.center_id || '—'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch(e){}
         }
 
-        function closeCreateCenterModal() {
-            document.getElementById('centerModal').classList.add('hidden');
+        async function handleCreateUser(e) {
+            e.preventDefault();
+            const full_name = document.getElementById('uName').value;
+            const phone = document.getElementById('uPhone').value;
+            const role = document.getElementById('uRole').value;
+            const password = document.getElementById('uPass').value;
+
+            try {
+                const res = await fetch(`${API_URL}/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ full_name, phone, role, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('Foydalanuvchi yaratildi!', 'success');
+                    closeModal('userModal');
+                    loadUsers();
+                    refreshDashboardStats();
+                } else {
+                    showToast(data.detail || 'Xatolik', 'error');
+                }
+            } catch(err) { showToast(err.message, 'error'); }
         }
 
-        function logout() {
-            localStorage.removeItem('token');
-            accessToken = '';
-            location.reload();
+        // Groups Load & Create
+        async function loadGroups() {
+            const container = document.getElementById('groupsTableContainer');
+            if (!token) {
+                container.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 text-xs">Guruhlarni ko‘rish uchun tizimga kiring.</div>';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_URL}/education/groups`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if (res.ok) {
+                    if (data.length === 0) {
+                        container.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 text-xs">Guruhlar mavjud emas. Yangi guruh oching.</div>';
+                        return;
+                    }
+                    container.innerHTML = data.map(g => `
+                        <div class="p-5 rounded-2xl bg-slate-800/40 border border-slate-800 hover:border-indigo-500/40 transition shadow-lg space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">CEFR Guruh</span>
+                                <span class="text-xs font-mono text-emerald-400 font-bold">${g.monthly_fee.toLocaleString()} so‘m</span>
+                            </div>
+                            <h4 class="text-sm font-bold text-white">${g.name}</h4>
+                            <p class="text-xs text-slate-400"><i class="fa-regular fa-clock mr-1 text-slate-500"></i> ${g.schedule || 'Jadval belgilanmagan'}</p>
+                            <div class="pt-2 border-t border-slate-700/50 flex justify-between items-center text-xs text-slate-400">
+                                <span>Ustoz: ID ${g.teacher_id || 'Biriktirilmagan'}</span>
+                                <span class="text-indigo-400 font-semibold cursor-pointer hover:underline" onclick="switchNav('attendance')">QR Davomat <i class="fa-solid fa-arrow-right text-[10px]"></i></span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch(e){}
         }
 
-        function logConsole(data, status = 200) {
-            const consoleEl = document.getElementById('apiConsole');
-            const statusEl = document.getElementById('responseStatus');
-            statusEl.textContent = `HTTP ${status}`;
-            statusEl.className = status >= 200 && status < 300 ? 'text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400' : 'text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-rose-400';
-            consoleEl.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        async function handleCreateGroup(e) {
+            e.preventDefault();
+            const name = document.getElementById('gName').value;
+            const schedule = document.getElementById('gSchedule').value;
+            const monthly_fee = parseInt(document.getElementById('gFee').value);
+
+            try {
+                const res = await fetch(`${API_URL}/education/groups`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ name, schedule, monthly_fee })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('Yangi guruh yaratildi!', 'success');
+                    closeModal('groupModal');
+                    loadGroups();
+                    refreshDashboardStats();
+                } else {
+                    showToast(data.detail || 'Xatolik', 'error');
+                }
+            } catch(err) { showToast(err.message, 'error'); }
         }
 
-        // Init
-        checkHealth();
-        if (accessToken) {
-            loadUserProfile();
-            loadCenters();
+        // Attendance QR
+        async function initAttendanceTab() {
+            if (!token) return;
+            try {
+                const res = await fetch(`${API_URL}/education/groups`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const groups = await res.json();
+                    const sel = document.getElementById('qrGroupSelect');
+                    sel.innerHTML = groups.map(g => `<option value="${g.id}">${g.name} (${g.schedule || ''})</option>`).join('');
+                }
+            } catch(e){}
         }
-        setInterval(checkHealth, 5000);
+
+        async function generateAttendanceQR() {
+            const groupId = document.getElementById('qrGroupSelect').value;
+            if (!groupId) return showToast('Guruh tanlang', 'error');
+
+            try {
+                // 1. Create session
+                const sRes = await fetch(`${API_URL}/attendance/sessions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ group_id: parseInt(groupId) })
+                });
+                const session = await sRes.json();
+                if (!sRes.ok) return showToast(session.detail || 'Xatolik', 'error');
+
+                // 2. Generate QR token
+                const qRes = await fetch(`${API_URL}/attendance/sessions/${session.id}/generate-qr`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const qrData = await qRes.json();
+                if (qRes.ok) {
+                    document.getElementById('qrDisplayBox').classList.remove('hidden');
+                    document.getElementById('qrTimerBox').classList.remove('hidden');
+                    
+                    const qrEl = document.getElementById('qrcode');
+                    qrEl.innerHTML = '';
+                    new QRCode(qrEl, {
+                        text: qrData.token,
+                        width: 160,
+                        height: 160,
+                        colorDark: "#1e1b4b",
+                        colorLight: "#ffffff",
+                    });
+                    showToast('QR Kod faollashtirildi!', 'success');
+                    logConsole(`QR token yaratildi: sessiya #${session.id}`);
+
+                    // Poll attendance records
+                    loadAttendanceRecords(session.id);
+                }
+            } catch(err) { showToast(err.message, 'error'); }
+        }
+
+        async function loadAttendanceRecords(sessionId) {
+            try {
+                const res = await fetch(`${API_URL}/attendance/sessions/${sessionId}/records`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const records = await res.json();
+                    document.getElementById('attendanceLiveCount').textContent = `${records.length} o‘quvchi belgilandi`;
+                    const list = document.getElementById('attendanceRecordsList');
+                    if (records.length === 0) {
+                        list.innerHTML = '<div class="p-6 text-center text-slate-500 text-xs">O‘quvchilar skaner qilishini kuting...</div>';
+                        return;
+                    }
+                    list.innerHTML = records.map(r => `
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-700/60 text-xs">
+                            <span class="font-bold text-white"><i class="fa-solid fa-user-check text-emerald-400 mr-2"></i> Talaba #${r.student_id}</span>
+                            <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono text-[10px] font-bold">QR orqali keldi</span>
+                        </div>
+                    `).join('');
+                }
+            } catch(e){}
+        }
+
+        // Finance Tab
+        async function loadFinance() {
+            const container = document.getElementById('paymentsTableContainer');
+            if (!token) {
+                container.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">To‘lovlarni ko‘rish uchun tizimga kiring.</div>';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_URL}/finance/payments`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const payments = await res.json();
+                if (res.ok) {
+                    if (payments.length === 0) {
+                        container.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">To‘lovlar mavjud emas.</div>';
+                        return;
+                    }
+                    container.innerHTML = `
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3.5">Talaba ID</th>
+                                    <th class="p-3.5">Summa</th>
+                                    <th class="p-3.5">Davr</th>
+                                    <th class="p-3.5">Usuli</th>
+                                    <th class="p-3.5">Sana</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                ${payments.map(p => `
+                                    <tr class="hover:bg-slate-800/30 transition">
+                                        <td class="p-3.5 font-mono text-slate-300">#${p.student_id}</td>
+                                        <td class="p-3.5 font-bold text-emerald-400">${p.amount.toLocaleString()} so‘m</td>
+                                        <td class="p-3.5 font-mono text-slate-400">${p.period}</td>
+                                        <td class="p-3.5 uppercase font-semibold text-[10px] text-slate-300">${p.method || 'naqd'}</td>
+                                        <td class="p-3.5 text-slate-500 font-mono text-[10px]">${p.created_at.split('T')[0]}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch(e){}
+        }
+
+        async function handleCreatePayment(e) {
+            e.preventDefault();
+            const student_id = parseInt(document.getElementById('pStudentId').value);
+            const amount = parseInt(document.getElementById('pAmount').value);
+            const period = document.getElementById('pPeriod').value;
+            const method = document.getElementById('pMethod').value;
+
+            try {
+                const res = await fetch(`${API_URL}/finance/payments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ student_id, amount, period, method })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('To‘lov muvaffaqiyatli qabul qilindi!', 'success');
+                    closeModal('paymentModal');
+                    loadFinance();
+                    refreshDashboardStats();
+                } else {
+                    showToast(data.detail || 'Xatolik', 'error');
+                }
+            } catch(err) { showToast(err.message, 'error'); }
+        }
+
+        // CEFR Diagnostic Test Logic
+        const TEST_QUESTIONS = [
+            {q:"My name ___ Ali.",opts:["am","is","are","be"],a:1,lvl:"A1",e:'"I" → am, "he/she/it" → is, "we/they" → are'},
+            {q:"I ___ a student.",opts:["am","is","are","be"],a:0,lvl:"A1",e:'"I" bilan doim "am" ishlatiladi.'},
+            {q:"She ___ two brothers.",opts:["have","has","having","had"],a:1,lvl:"A1",e:'"She" bilan hozirgi zamonda "has" ishlatiladi.'},
+            {q:"What color is grass?",opts:["Blue","Green","Red","Black"],a:1,lvl:"A1",e:"Grass yashil (Green) bo'ladi."},
+            {q:"Yesterday, I ___ to school.",opts:["go","goes","went","going"],a:2,lvl:"A2",e:'"Yesterday" o\'tgan zamon bo\'lib, "went" to\'g\'ri.'},
+            {q:"He usually ___ breakfast at 7.",opts:["have","has","had","having"],a:1,lvl:"A2",e:'"He" bilan Present Simple\'da "has" ishlatiladi.'},
+            {q:"We were tired, ___ we went home early.",opts:["because","so","but","if"],a:1,lvl:"A2",e:'Natijani ifodalash uchun "so" (shuning uchun) ishlatiladi.'},
+            {q:"If I have time, I ___ you.",opts:["call","called","will call","calling"],a:2,lvl:"B1",e:"First Conditional: if + Present Simple → will + verb."},
+            {q:"This book is ___ than the last one.",opts:["interesting","more interesting","most interesting","interest"],a:1,lvl:"B1",e:'Taqqoslashda "more interesting" bo\'ladi.'},
+            {q:"I have lived here ___ 2020.",opts:["for","since","during","from"],a:1,lvl:"B1",e:'Boshlanish nuqtasi bilan "since" ishlatiladi.'}
+        ];
+
+        let wtIdx = 0;
+        let wtScore = 0;
+
+        function startWebTest() {
+            wtIdx = 0;
+            wtScore = 0;
+            document.getElementById('webTestCard').classList.remove('hidden');
+            document.getElementById('wtResultCard').classList.add('hidden');
+            renderWebQuestion();
+        }
+
+        function renderWebQuestion() {
+            const item = TEST_QUESTIONS[wtIdx];
+            document.getElementById('wtStep').textContent = `Savol ${wtIdx + 1} / ${TEST_QUESTIONS.length}`;
+            document.getElementById('wtLevel').textContent = item.lvl;
+            document.getElementById('wtProgressBar').style.width = `${((wtIdx + 1) / TEST_QUESTIONS.length) * 100}%`;
+            document.getElementById('wtQuestion').textContent = item.q;
+            document.getElementById('wtExplanation').classList.add('hidden');
+
+            const container = document.getElementById('wtOptions');
+            container.innerHTML = item.opts.map((opt, i) => `
+                <button onclick="answerWebQuestion(${i})" class="w-full py-3 px-4 text-left text-xs font-semibold rounded-2xl border border-slate-700 hover:border-indigo-500 bg-slate-900/60 hover:bg-slate-800 transition flex items-center justify-between active:scale-98">
+                    <span>${opt}</span>
+                    <i class="fa-regular fa-circle text-slate-500"></i>
+                </button>
+            `).join('');
+        }
+
+        function answerWebQuestion(choice) {
+            const item = TEST_QUESTIONS[wtIdx];
+            const isCorrect = choice === item.a;
+            const exp = document.getElementById('wtExplanation');
+
+            if (isCorrect) {
+                wtScore++;
+                exp.className = 'p-3 rounded-2xl text-xs leading-relaxed border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 block';
+                exp.innerHTML = `<b>To‘g‘ri!</b> 🎉 ${item.e}`;
+            } else {
+                exp.className = 'p-3 rounded-2xl text-xs leading-relaxed border border-rose-500/30 bg-rose-500/10 text-rose-300 block';
+                exp.innerHTML = `<b>Xato!</b> To‘g‘ri javob: <b>${item.opts[item.a]}</b>. ${item.e}`;
+            }
+
+            const buttons = document.querySelectorAll('#wtOptions button');
+            buttons.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i === item.a) btn.className += ' !border-emerald-500 !bg-emerald-500/20 !text-emerald-300';
+                else if (i === choice) btn.className += ' !border-rose-500 !bg-rose-500/20 !text-rose-300';
+            });
+
+            setTimeout(() => {
+                wtIdx++;
+                if (wtIdx < TEST_QUESTIONS.length) {
+                    renderWebQuestion();
+                } else {
+                    finishWebTest();
+                }
+            }, 1300);
+        }
+
+        function finishWebTest() {
+            document.getElementById('webTestCard').classList.add('hidden');
+            document.getElementById('wtResultCard').classList.remove('hidden');
+
+            let lvl = 'A1';
+            if (wtScore >= 8) lvl = 'B1 (O‘rta)';
+            else if (wtScore >= 5) lvl = 'A2 (Boshlang‘ich-2)';
+            else lvl = 'A1 (Boshlang‘ich-1)';
+
+            document.getElementById('wtFinalLevel').textContent = `Daraja: ${lvl}`;
+            document.getElementById('wtFinalScore').textContent = `10 ta savoldan ${wtScore} tasiga to‘g‘ri javob berdingiz (${wtScore * 10}%).`;
+        }
+
+        async function syncTestResultToBackend() {
+            const phone = document.getElementById('wtSyncPhone').value;
+            const lvl = document.getElementById('wtFinalLevel').textContent.replace('Daraja: ', '');
+            try {
+                const res = await fetch(`${API_URL}/education/tests/sync-attempt`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, score: wtScore, total: 10, level: lvl })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('Natija markaz bazasiga sinxronlandi! 🚀', 'success');
+                    logConsole(`Test sinxronlandi: ${phone} -> ${lvl}`);
+                }
+            } catch(e){ showToast(e.message, 'error'); }
+        }
+
+        // Initialize App
+        initTheme();
+        loadCurrentUser();
+        refreshDashboardStats();
     </script>
 </body>
 </html>
