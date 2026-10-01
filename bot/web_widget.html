@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEFR English Bot — Web Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, sans-serif; background: #F1F5F9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+  .chat-wrap { width: 420px; max-width: 100vw; height: 680px; display: flex; flex-direction: column; background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.12); overflow: hidden; }
+
+  .chat-header { background: #2563EB; color: #fff; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+  .chat-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .chat-header-info h2 { font-size: 15px; font-weight: 600; }
+  .chat-header-info p { font-size: 12px; opacity: .75; }
+  .level-pill { margin-left: auto; background: rgba(255,255,255,.2); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 700; display: none; }
+
+  .messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 82%; display: flex; flex-direction: column; gap: 3px; }
+  .msg.bot { align-self: flex-start; }
+  .msg.user { align-self: flex-end; }
+  .bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+  .bot .bubble { background: #F1F5F9; color: #1E293B; border-bottom-left-radius: 4px; }
+  .user .bubble { background: #2563EB; color: #fff; border-bottom-right-radius: 4px; }
+  .bubble b { font-weight: 600; }
+  .bubble .correct { color: #15803D; }
+  .bubble .wrong { color: #DC2626; }
+
+  .buttons { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .btn-opt { background: #fff; border: 1.5px solid #BFDBFE; color: #1D4ED8; border-radius: 10px; padding: 8px 13px; font-size: 13px; font-weight: 500; cursor: pointer; text-align: left; transition: .15s; }
+  .btn-opt:hover { background: #EFF6FF; border-color: #2563EB; }
+  .btn-opt.primary { background: #2563EB; color: #fff; border-color: #2563EB; }
+  .btn-opt.primary:hover { background: #1D4ED8; }
+  .btn-opt:disabled { opacity: .5; cursor: not-allowed; }
+
+  .chat-input { border-top: 1px solid #E2E8F0; display: flex; align-items: flex-end; padding: 10px 14px; gap: 8px; }
+  .chat-input textarea { flex: 1; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 9px 13px; font: inherit; font-size: 14px; resize: none; outline: none; max-height: 100px; line-height: 1.4; }
+  .chat-input textarea:focus { border-color: #2563EB; }
+  .send-btn { width: 38px; height: 38px; background: #2563EB; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: .15s; }
+  .send-btn:hover { background: #1D4ED8; }
+  .send-btn svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; }
+  .typing span { width: 7px; height: 7px; border-radius: 50%; background: #94A3B8; animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100%{opacity:.3} 40%{opacity:1} }
+
+  /* Embed snippet */
+  .embed-note { margin-top: 18px; text-align: center; font-size: 12px; color: #94A3B8; }
+  .embed-code { background: #1E293B; color: #7DD3FC; font-family: monospace; font-size: 12px; border-radius: 8px; padding: 10px 14px; margin-top: 8px; white-space: pre; overflow-x: auto; }
+</style>
+</head>
+<body>
+<div style="display:flex;flex-direction:column;align-items:center">
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div class="chat-avatar">📚</div>
+      <div class="chat-header-info">
+        <h2>English CEFR Bot</h2>
+        <p>Ingliz tilini o'rganing</p>
+      </div>
+      <div class="level-pill" id="levelPill">A1</div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="chat-input">
+      <textarea id="inputArea" placeholder="Javobingizni yozing..." rows="1"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendText()}"
+      ></textarea>
+      <button class="send-btn" onclick="sendText()">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="embed-note">
+    Saytingizga qo'shish uchun:
+    <div class="embed-code">&lt;iframe src="web_widget.html" width="440" height="700"
+  frameborder="0" style="border-radius:20px"&gt;&lt;/iframe&gt;</div>
+  </div>
+</div>
+
+<script>
+// ─── DATA (same as bot.py) ────────────────────────────────────────────────
+const PLACEMENT = [
+  {q:"My name ___ Ali.",opts:["am","is","are","be"],a:1,e:'"I" → am, "he/she/it" → is, "we/they" → are'},
+  {q:"I ___ a student.",opts:["am","is","are","be"],a:0,e:'"I" bilan har doim "am" ishlatiladi.'},
+  {q:"She ___ two brothers.",opts:["have","has","having","had"],a:1,e:'"She" bilan hozirgi zamonda "has" ishlatiladi.'},
+  {q:"What color is grass?",opts:["Blue","Green","Red","Black"],a:1,e:"Grass (o't) odatda green (yashil) rangda bo'ladi."},
+  {q:"Yesterday, I ___ to school.",opts:["go","goes","went","going"],a:2,e:'"Yesterday" → o\'tgan zamon. "go" ning Past Simple shakli "went".'},
+  {q:"He usually ___ breakfast at 7.",opts:["have","has","had","having"],a:1,e:'"He" bilan Present Simple\'da "has" ishlatiladi.'},
+  {q:"We were tired, ___ we went home early.",opts:["because","so","but","if"],a:1,e:'Natijani bildirish uchun "so" mos keladi.'},
+  {q:"If I have time, I ___ you.",opts:["call","called","will call","calling"],a:2,e:"First Conditional: if + Present Simple → will + verb."},
+  {q:"This book is ___ than the last one.",opts:["interesting","more interesting","most interesting","interest"],a:1,e:'Taqqoslashda uzun sifat bilan "more + adjective" ishlatiladi.'},
+  {q:"I have lived here ___ 2020.",opts:["for","since","during","from"],a:1,e:'Aniq boshlanish nuqtasi bilan Present Perfect\'da "since" ishlatiladi.'},
+];
+
+const READINGS = {
+  A1:[
+    {title:"My Family",text:"My name is Tom. I live with my mother, father, and little sister. My mother likes tea, and my father likes coffee. My sister likes the color pink.",qs:[
+      {type:"mcq",q:"Who does Tom live with?",opts:["His friends","His family","His teacher","His neighbors"],a:1,e:"Tom onasi, otasi va singlisi bilan yashaydi."},
+      {type:"tf",q:"Tom's father likes coffee.",opts:["True ✅","False ❌"],a:0,e:"Ha, matnda otasi coffee yoqtirishi aytilgan."},
+      {type:"gap",q:"Tom's sister likes the color ___.",a:"pink",e:'Singlisi pink rangni yoqtiradi.'},
+    ]},
+    {title:"Breakfast",text:"I get up at seven every morning. I eat bread and an egg for breakfast. I drink milk too. Then I go to school at eight o'clock.",qs:[
+      {type:"mcq",q:"What does the student drink?",opts:["Juice","Water","Milk","Tea"],a:2,e:"U milk (sut) ichadi."},
+      {type:"tf",q:"The student goes to school at eight.",opts:["True ✅","False ❌"],a:0,e:"Ha, maktabga soat 8da boradi."},
+      {type:"gap",q:"The student eats bread and an ___ for breakfast.",a:"egg",e:'"bread and an egg" — non va tuxum.'},
+    ]},
+    {title:"My Room",text:"My room is small but nice. My bed is blue and my desk is white. I have three books on the desk. There is a small plant near the window.",qs:[
+      {type:"mcq",q:"What color is the bed?",opts:["White","Blue","Green","Yellow"],a:1,e:"Karavot ko'k (blue)."},
+      {type:"tf",q:"There are three books on the desk.",opts:["True ✅","False ❌"],a:0,e:"Ha, 3 ta kitob bor."},
+      {type:"gap",q:"There is a small ___ near the window.",a:"plant",e:"Deraza yonida plant (o'simlik) bor."},
+    ]},
+  ],
+  A2:[
+    {title:"A Busy Morning",text:"Last Monday, I woke up late because my alarm did not ring. I quickly got dressed and left home without breakfast. I missed the first bus, so I walked to the station.",qs:[
+      {type:"mcq",q:"Why did the speaker wake up late?",opts:["The bus was late","The alarm did not ring","It was Sunday","The station was closed"],a:1,e:"Uyg'otgich jiringlamagan."},
+      {type:"tf",q:"The speaker ate breakfast before leaving.",opts:["True ✅","False ❌"],a:1,e:"Yo'q, nonushtasiz ketgan."},
+      {type:"gap",q:"The speaker missed the first ___.",a:"bus",e:"Birinchi avtobusni o'tkazib yuborgan."},
+    ]},
+    {title:"Weekend Plans",text:"My friends and I planned a picnic last weekend. We wanted to go to the park on Saturday, but it rained all morning. We changed our plan and watched a film at my house. On Sunday, we finally went to the park.",qs:[
+      {type:"mcq",q:"What did they do on Saturday?",opts:["Went to the park","Watched a film","Played football","Visited a museum"],a:1,e:"Yomg'ir sababli uyda film ko'rishgan."},
+      {type:"tf",q:"They went to the park on Sunday.",opts:["True ✅","False ❌"],a:0,e:"Ha, yakshanba kuni parkka borishgan."},
+      {type:"gap",q:"It ___ all morning on Saturday.",a:"rained",e:"Shanba kuni yomg'ir yog'gan (rained)."},
+    ]},
+  ],
+  B1:[
+    {title:"Learning a Language",text:"Learning a new language can be challenging, but it opens many opportunities. People who speak another language communicate with more people and understand different cultures. Regular practice is important because progress comes from small improvements over time.",qs:[
+      {type:"mcq",q:"What can learning a language open?",opts:["Only hobbies","Many opportunities","Fewer conversations","More free time"],a:1,e:"Til o'rganish ko'plab imkoniyatlarni ochadi."},
+      {type:"tf",q:"Regular practice is important for progress.",opts:["True ✅","False ❌"],a:0,e:"Ha, matn muntazam mashq muhimligini aytadi."},
+      {type:"gap",q:"Progress comes from small ___ over time.",a:"improvements",e:'"small improvements" — kichik yaxshilanishlar.'},
+    ]},
+    {title:"City or Countryside?",text:"Living in a city can be convenient because shops, schools, and transport are usually nearby. However, cities can also be noisy and crowded. The countryside offers more space and quiet, although services may be farther away.",qs:[
+      {type:"mcq",q:"Why can city life be convenient?",opts:["It is always quiet","Services are nearby","There are no people","It has more space"],a:1,e:"Xizmatlar yaqin bo'lishi shaharni qulay qiladi."},
+      {type:"tf",q:"The countryside is always closer to services.",opts:["True ✅","False ❌"],a:1,e:"Yo'q, qishloqda xizmatlar uzoqroq bo'lishi mumkin."},
+      {type:"gap",q:"Cities can be noisy and ___.",a:"crowded",e:'"noisy and crowded" — shovqinli va gavjum.'},
+    ]},
+  ],
+};
+
+const SPEAKING = {
+  A1:[
+    {q:"What is your name?",uz:"Ismingiz nima?",model:"My name is Ali. I am a student.",kw:["name","am","is"],adj:["good","happy","nice","small"]},
+    {q:"How old are you?",uz:"Yoshingiz nechada?",model:"I am sixteen years old. I am a happy student.",kw:["am","old"],adj:["happy","young","good"]},
+    {q:"Do you have a pet?",uz:"Uy hayvoningiz bormi?",model:"Yes, I have a small cat. It is very cute.",kw:["have","is"],adj:["small","cute","big"]},
+  ],
+  A2:[
+    {q:"Describe your daily routine.",uz:"Kundalik tartibingizni tasvirlab bering.",model:"I usually wake up at seven. I have a quick breakfast and go to school.",kw:["wake","have","go","usually"],adj:["quick","busy","good"]},
+    {q:"What did you do yesterday?",uz:"Kecha nima qildingiz?",model:"Yesterday, I went to school and studied English. It was a busy day.",kw:["went","studied","was"],adj:["busy","tired","good"]},
+    {q:"Tell me about your family.",uz:"Oilangiz haqida gapirib bering.",model:"My family is small. I live with my parents and my younger brother.",kw:["live","is","are"],adj:["small","friendly","close"]},
+  ],
+  B1:[
+    {q:"What are the advantages of learning English?",uz:"Ingliz tilini o'rganishning afzalliklari nima?",model:"Learning English has many advantages. It helps people communicate internationally.",kw:["can","help","has"],adj:["many","important","useful"]},
+    {q:"Describe your hometown.",uz:"Shahringizni tasvirlab bering.",model:"My hometown is a lively place with friendly people. It has busy streets.",kw:["is","has"],adj:["lively","friendly","interesting"]},
+    {q:"What would you like to do in the future?",uz:"Kelajakda nima qilishni xohlaysiz?",model:"In the future, I would like to improve my English and learn about technology.",kw:["would","like","hope"],adj:["useful","important","good"]},
+  ],
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+let state = {
+  mode: null, level: null,
+  placement: {index:0, score:0},
+  session: null,
+  progress: {answered:0,correct:0,reading:{answered:0,correct:0},speaking:{answered:0,correct:0}},
+  wrong: [],
+};
+
+// ─── UTILS ────────────────────────────────────────────────────────────────
+function shuffle(arr) { return [...arr].sort(()=>Math.random()-.5); }
+
+function addMsg(role, html, buttons=[]) {
+  const wrap = document.createElement('div');
+  wrap.className = `msg ${role}`;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = html;
+  wrap.appendChild(bubble);
+  if (buttons.length) {
+    const btns = document.createElement('div');
+    btns.className = 'buttons';
+    buttons.forEach(b => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-opt' + (b.primary ? ' primary' : '');
+      btn.textContent = b.label;
+      btn.onclick = b.action;
+      btns.appendChild(btn);
+    });
+    wrap.appendChild(btns);
+  }
+  document.getElementById('messages').appendChild(wrap);
+  wrap.scrollIntoView({behavior:'smooth'});
+  return wrap;
+}
+
+function typing() {
+  const d = document.createElement('div');
+  d.className = 'msg bot';
+  d.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  document.getElementById('messages').appendChild(d);
+  d.scrollIntoView({behavior:'smooth'});
+  return d;
+}
+
+function delay(fn, ms=400) { const t=typing(); setTimeout(()=>{ t.remove(); fn(); }, ms); }
+
+function setLevel(l) { state.level=l; const p=document.getElementById('levelPill'); p.textContent=l; p.style.display='block'; }
+
+// ─── PLACEMENT ────────────────────────────────────────────────────────────
+function startPlacement() {
+  state.mode='placement'; state.placement={index:0,score:0};
+  delay(sendPlacementQ, 500);
+}
+
+function sendPlacementQ() {
+  const idx = state.placement.index;
+  const q = PLACEMENT[idx];
+  addMsg('bot',
+    `📝 <b>Daraja aniqlash</b> — Savol ${idx+1}/${PLACEMENT.length}\n\n${q.q}`,
+    q.opts.map((o,i) => ({label: o, action: ()=>answerPlacement(i)}))
+  );
+}
+
+function answerPlacement(i) {
+  const idx = state.placement.index;
+  const q = PLACEMENT[idx];
+  const ok = i===q.a;
+  if(ok) state.placement.score++;
+  addMsg('user', q.opts[i]);
+  const fb = ok ? `✅ <b class="correct">To'g'ri!</b>` : `❌ <b class="wrong">Xato.</b> To'g'ri javob: <b>${q.opts[q.a]}</b>`;
+  delay(()=>{
+    addMsg('bot', `${fb}\n\n💡 <i>${q.e}</i>`, [{
+      label: idx<9 ? '➡️ Keyingi savol' : '📊 Natijani ko\'rish',
+      primary: true,
+      action: ()=>{ state.placement.index++; if(state.placement.index>=PLACEMENT.length) finishPlacement(); else delay(sendPlacementQ); }
+    }]);
+  });
+}
+
+function finishPlacement() {
+  const score = state.placement.score;
+  const level = score<=4?'A1':score<=7?'A2':'B1';
+  setLevel(level);
+  const names={A1:"Boshlang'ich",A2:"Boshlang'ichdan yuqori",B1:"O'rta daraja"};
+  delay(()=>{
+    addMsg('bot',
+      `🎉 <b>Test yakunlandi!</b>\n\nNatija: <b>${score}/${PLACEMENT.length}</b>\nDarajangiz: <b>${level} — ${names[level]}</b>\n\nQuyidan mashqni tanlang 👇`,
+      [
+        {label:'📖 Reading mashqi', primary:true, action:startReading},
+        {label:'🗣 Speaking mashqi', action:startSpeaking},
+        {label:'📊 Natijalarim', action:showProgress},
+      ]
+    );
+    state.mode='menu';
+  }, 600);
+}
+
+// ─── READING ─────────────────────────────────────────────────────────────
+function startReading() {
+  const data = shuffle(READINGS[state.level||'A1']).slice(0,2);
+  state.mode='reading';
+  state.session={passages:data,pIdx:0,qIdx:0,correct:0,wrong:0,answered:0,waitGap:false};
+  delay(sendReadingQ, 400);
+}
+
+function sendReadingQ() {
+  const s=state.session, p=s.passages[s.pIdx], q=p.qs[s.qIdx];
+  const head=`📖 <b>Reading</b> — Matn ${s.pIdx+1}/${s.passages.length}, Savol ${s.qIdx+1}/3\n<b>${p.title}</b>\n\n<i>${p.text}</i>\n\n❓ <b>${q.q}</b>`;
+  if(q.type==='gap'){
+    s.waitGap=true;
+    addMsg('bot', head+'\n\n✏️ Javobingizni yozing:');
+  } else {
+    s.waitGap=false;
+    addMsg('bot', head, q.opts.map((o,i)=>({label:o, action:()=>answerReading(i)})));
+  }
+}
+
+function answerReading(choice=null, textAns=null) {
+  const s=state.session, p=s.passages[s.pIdx], q=p.qs[s.qIdx];
+  let ok;
+  if(q.type==='gap') { ok=textAns.trim().toLowerCase()===q.a.toLowerCase(); addMsg('user',textAns); }
+  else { ok=choice===q.a; addMsg('user',q.opts[choice]); }
+  s.answered++; state.progress.answered++; state.progress.reading.answered++;
+  if(ok){s.correct++;state.progress.correct++;state.progress.reading.correct++;}else s.wrong++;
+  s.waitGap=false;
+  const fb=ok?`✅ <b class="correct">To'g'ri!</b>`:`❌ <b class="wrong">Xato.</b> To'g'ri javob: <b>${q.type==='gap'?q.a:q.opts[q.a]}</b>`;
+  const isLastQ=s.qIdx===2, isLastP=s.pIdx===s.passages.length-1;
+  const nextLabel=isLastQ&&isLastP?'📊 Seans natijasi':'➡️ Keyingi savol';
+  delay(()=>{
+    addMsg('bot',`${fb}\n\n💡 <i>${q.e}</i>`,[{label:nextLabel,primary:true,action:()=>{
+      if(!isLastQ){s.qIdx++;delay(sendReadingQ);}
+      else if(!isLastP){s.qIdx=0;s.pIdx++;delay(sendReadingQ);}
+      else endSession();
+    }}]);
+  });
+}
+
+// ─── SPEAKING ─────────────────────────────────────────────────────────────
+function startSpeaking() {
+  const data=shuffle(SPEAKING[state.level||'A1']).slice(0,3);
+  state.mode='speaking';
+  state.session={questions:data,idx:0,correct:0,wrong:0,answered:0,waitAnswer:true};
+  delay(sendSpeakingQ, 400);
+}
+
+function sendSpeakingQ() {
+  const s=state.session, q=s.questions[s.idx];
+  s.waitAnswer=true;
+  addMsg('bot',`🗣 <b>Speaking</b> — Savol ${s.idx+1}/${s.questions.length}\n\n❓ <b>${q.q}</b>\n🇺🇿 <i>${q.uz}</i>\n\n✏️ Inglizcha javobingizni yozing:`);
+}
+
+function answerSpeaking(answer) {
+  const s=state.session, q=s.questions[s.idx];
+  const lower=answer.toLowerCase();
+  const hasVerb=q.kw.some(k=>lower.includes(k));
+  const hasAdj=q.adj.some(a=>lower.includes(a));
+  const complete=answer.trim().split(/\s+/).length>=4;
+  const checks=[['Fe\'l ishlatilgan',hasVerb],['Kamida 1 ta sifat',hasAdj],['Gap to\'liq (4+ so\'z)',complete]];
+  const score=checks.filter(c=>c[1]).length;
+  const passed=score>=2;
+  s.answered++;state.progress.answered++;state.progress.speaking.answered++;
+  if(passed){s.correct++;state.progress.correct++;state.progress.speaking.correct++;}else s.wrong++;
+  s.waitAnswer=false;
+  const verdict=passed?`🌟 <b class="correct">Yaxshi javob!</b>`:`📝 <b class="wrong">Yana mashq qiling.</b>`;
+  const checklist=checks.map(c=>`${c[1]?'✅':'❌'} ${c[0]}`).join('\n');
+  const isLast=s.idx===s.questions.length-1;
+  delay(()=>{
+    addMsg('bot',
+      `${verdict} (${score}/3)\n\n${checklist}\n\n📌 <b>Namuna:</b> <i>${q.model}</i>`,
+      [{label:isLast?'📊 Seans natijasi':'➡️ Keyingi savol',primary:true,action:()=>{
+        if(!isLast){s.idx++;delay(sendSpeakingQ);}else endSession();
+      }}]
+    );
+  });
+}
+
+// ─── SESSION END ──────────────────────────────────────────────────────────
+function endSession() {
+  const s=state.session;
+  const pct=s.answered?Math.round(s.correct/s.answered*100):0;
+  delay(()=>{
+    addMsg('bot',
+      `🏁 <b>Seans yakunlandi!</b>\n\n✅ To'g'ri: <b>${s.correct}</b>\n❌ Xato: <b>${s.wrong}</b>\n🎯 Aniqlik: <b>${pct}%</b>`,
+      [
+        {label:'📖 Reading mashqi',action:startReading},
+        {label:'🗣 Speaking mashqi',action:startSpeaking},
+        {label:'📊 Natijalarim',action:showProgress},
+      ]
+    );
+    state.mode='menu';
+  }, 500);
+}
+
+// ─── PROGRESS ─────────────────────────────────────────────────────────────
+function showProgress() {
+  const p=state.progress, level=state.level||'—';
+  const pct=p.answered?Math.round(p.correct/p.answered*100):0;
+  const rp=p.reading.answered?Math.round(p.reading.correct/p.reading.answered*100):0;
+  const sp=p.speaking.answered?Math.round(p.speaking.correct/p.speaking.answered*100):0;
+  addMsg('bot',
+    `📊 <b>Mening natijalarim</b>\n\n🏅 Daraja: <b>${level}</b>\n📝 Jami savollar: <b>${p.answered}</b>\n🎯 Aniqlik: <b>${pct}%</b>\n\n📖 Reading: <b>${rp}%</b> (${p.reading.answered} savol)\n🗣 Speaking: <b>${sp}%</b> (${p.speaking.answered} savol)`,
+    [
+      {label:'📖 Reading mashqi',action:startReading},
+      {label:'🗣 Speaking mashqi',action:startSpeaking},
+    ]
+  );
+}
+
+// ─── INPUT ────────────────────────────────────────────────────────────────
+function sendText() {
+  const el=document.getElementById('inputArea');
+  const text=el.value.trim();
+  if(!text) return;
+  el.value=''; el.style.height='auto';
+  const s=state.session;
+  if(state.mode==='reading'&&s&&s.waitGap) answerReading(null,text);
+  else if(state.mode==='speaking'&&s&&s.waitAnswer) answerSpeaking(text);
+  else addMsg('user',text), delay(()=>addMsg('bot','Mashqni boshlash uchun tugmani bosing 👇',[
+    {label:'📖 Reading',action:startReading},{label:'🗣 Speaking',action:startSpeaking}
+  ]));
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+window.onload = () => {
+  delay(()=>{
+    addMsg('bot','👋 <b>Salom!</b> Men CEFR ingliz tili botiman.\n\nAvval darajangizni aniqlaymiz — 10 ta savol.',[
+      {label:'🚀 Testni boshlash',primary:true,action:startPlacement}
+    ]);
+  }, 300);
+};
+</script>
+</body>
+</html>
