@@ -58,9 +58,51 @@
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
         }
+
+        @keyframes blob {
+            0%, 100% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -45px) scale(1.15); }
+            66% { transform: translate(-25px, 20px) scale(0.9); }
+        }
+        .animate-blob {
+            animation: blob 14s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .animation-delay-2000 { animation-delay: 2.5s; }
+        .animation-delay-4000 { animation-delay: 5s; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
+
+    <!-- 🌟 Super Splash Screen (Kirishdagi ajoyib animatsiya) -->
+    <div id="splashScreen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950 transition-all duration-700">
+        <div class="relative flex items-center justify-center mb-6">
+            <div class="absolute w-40 h-40 rounded-full bg-indigo-500/25 blur-3xl animate-pulse"></div>
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center text-white text-3xl shadow-2xl shadow-indigo-500/50 ring-4 ring-indigo-500/20 animate-bounce">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-200 to-indigo-400 tracking-tight mb-2">
+            English Platform
+        </h1>
+        <p class="text-xs text-indigo-400 font-mono tracking-widest uppercase mb-6 flex items-center space-x-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
+            <span>SaaS Architecture Suite</span>
+        </p>
+        <!-- Animated Loading Bar -->
+        <div class="w-56 h-1.5 bg-slate-800/80 rounded-full overflow-hidden p-0.5 border border-slate-700/50 shadow-inner">
+            <div id="splashProgress" class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full w-0 transition-all duration-1000 ease-out shadow-lg"></div>
+        </div>
+    </div>
+
+    <!-- 🌌 Interactive Ambient Background (Orqa fondagi harakatlanuvchi animatsiya) -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <!-- Floating glowing mesh orbs -->
+        <div class="absolute -top-32 -left-32 w-[480px] h-[480px] bg-indigo-600/15 dark:bg-indigo-600/20 rounded-full blur-[120px] animate-blob"></div>
+        <div class="absolute top-1/3 -right-32 w-[520px] h-[520px] bg-violet-600/15 dark:bg-violet-600/20 rounded-full blur-[140px] animate-blob animation-delay-2000"></div>
+        <div class="absolute -bottom-32 left-1/4 w-[500px] h-[500px] bg-sky-600/10 dark:bg-sky-600/15 rounded-full blur-[130px] animate-blob animation-delay-4000"></div>
+        <!-- Constellation Canvas -->
+        <canvas id="bgCanvas" class="absolute inset-0 w-full h-full opacity-60 dark:opacity-40"></canvas>
+    </div>
 
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
@@ -1267,8 +1309,112 @@
             } catch(e){ showToast(e.message, 'error'); }
         }
 
+        // 🌟 Splash Screen Dismiss Progression
+        window.addEventListener('DOMContentLoaded', () => {
+            const bar = document.getElementById('splashProgress');
+            if (bar) bar.style.width = '100%';
+            setTimeout(() => {
+                const splash = document.getElementById('splashScreen');
+                if (splash) {
+                    splash.style.opacity = '0';
+                    splash.style.transform = 'scale(1.05)';
+                    splash.style.pointerEvents = 'none';
+                    setTimeout(() => splash.remove(), 750);
+                }
+            }, 1000);
+        });
+
+        // 🌌 Interactive Constellation Canvas Engine
+        function initConstellationCanvas() {
+            const canvas = document.getElementById('bgCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            const particles = [];
+            const count = Math.min(50, Math.floor(width / 26));
+            const mouse = { x: -1000, y: -1000 };
+
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    radius: Math.random() * 2 + 1,
+                    baseAlpha: Math.random() * 0.4 + 0.3
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                const isDark = document.documentElement.classList.contains('dark');
+                const rgb = isDark ? '129, 140, 248' : '79, 70, 229';
+
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+
+                    // Draw Node
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${rgb}, ${p.baseAlpha})`;
+                    ctx.fill();
+
+                    // Connect Nodes
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const p2 = particles[j];
+                        const dx = p.x - p2.x;
+                        const dy = p.y - p2.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 120) {
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.strokeStyle = `rgba(${rgb}, ${(1 - dist / 120) * 0.22})`;
+                            ctx.lineWidth = 0.75;
+                            ctx.stroke();
+                        }
+                    }
+
+                    // Connect to Mouse Cursor
+                    const mdx = p.x - mouse.x;
+                    const mdy = p.y - mouse.y;
+                    const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+                    if (mdist < 140) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(mouse.x, mouse.y);
+                        ctx.strokeStyle = `rgba(${rgb}, ${(1 - mdist / 140) * 0.45})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
         // Initialize App
         initTheme();
+        initConstellationCanvas();
         loadCurrentUser();
         refreshDashboardStats();
     </script>
