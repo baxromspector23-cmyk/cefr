@@ -2,7 +2,10 @@ import os
 import json
 import random
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import (
+    Update, InlineKeyboardButton, InlineKeyboardMarkup,
+    WebAppInfo, MenuButtonWebApp, ReplyKeyboardMarkup, KeyboardButton
+)
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, ContextTypes
@@ -10,6 +13,8 @@ from telegram.ext import (
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://baxromspector23-cmyk.github.io/cefr/webapp.html")
+
 
 # ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -168,6 +173,7 @@ def save_level(uid, level):
 
 def menu_kb():
     return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📱 Web App-ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))],
         [InlineKeyboardButton("📖 Reading mashqi", callback_data="start_reading"),
          InlineKeyboardButton("🗣 Speaking mashqi", callback_data="start_speaking")],
         [InlineKeyboardButton("📊 Natijalarim", callback_data="show_progress"),
@@ -481,14 +487,27 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     st = get_state(uid)
     name = update.effective_user.first_name or "O'quvchi"
+
+    # Set bottom-left Menu Button to open Web App
+    try:
+        await context.bot.set_chat_menu_button(
+            chat_id=update.effective_chat.id,
+            menu_button=MenuButtonWebApp(text="📱 Web App", web_app=WebAppInfo(url=WEBAPP_URL))
+        )
+    except Exception:
+        pass
+
+    inline_kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("📱 Web App-da ochish (Mini App)", web_app=WebAppInfo(url=WEBAPP_URL))],
+        [InlineKeyboardButton("🚀 Chatda testni boshlash", callback_data="start_placement")]
+    ])
+
     await update.message.reply_text(
         f"👋 Salom, *{name}*!\n\n"
         f"Men sizga ingliz tilini CEFR uslubida o'rganishga yordam beraman.\n\n"
-        f"Avval darajangizni aniqlaymiz — 10 ta savol.",
+        f"📱 Endi botimizda qulay **Telegram Web App** mavjud! Xohlasangiz pastdagi tugma orqali ilovani ochishingiz yoki chatning o'zida test topshirishingiz mumkin.",
         parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("🚀 Testni boshlash", callback_data="start_placement")
-        ]])
+        reply_markup=inline_kb
     )
 
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):

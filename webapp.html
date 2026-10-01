@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CEFR English Web App</title>
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Tailwind CSS & Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--tg-theme-bg-color, #f8fafc);
+            color: var(--tg-theme-text-color, #0f172a);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tg-card {
+            background-color: var(--tg-theme-secondary-bg-color, #ffffff);
+        }
+        .tg-btn-primary {
+            background-color: var(--tg-theme-button-color, #4f46e5);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased select-none pb-20">
+
+    <!-- Top App Header -->
+    <header class="tg-card border-b border-slate-200/80 sticky top-0 z-40 px-4 py-3 shadow-xs">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-sm">
+                    <i class="fa-solid fa-graduation-cap text-base"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold leading-tight" id="userNameTitle">CEFR English App</h1>
+                    <p class="text-[11px] text-indigo-500 font-semibold" id="userLevelBadge">Daraja: Aniqlanmagan</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-1.5">
+                <span id="scoreCounter" class="text-xs px-2.5 py-1 rounded-full font-bold bg-indigo-50 text-indigo-700">0 ball</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="px-4 pt-3 pb-1 flex space-x-2">
+        <button onclick="switchTab('test')" id="tabBtn-test" class="flex-1 py-2 px-3 text-xs font-bold rounded-xl transition bg-indigo-600 text-white shadow-xs">
+            <i class="fa-solid fa-pen-nib mr-1"></i> Test & Mashq
+        </button>
+        <button onclick="switchTab('reading')" id="tabBtn-reading" class="flex-1 py-2 px-3 text-xs font-bold rounded-xl transition bg-slate-200 text-slate-700">
+            <i class="fa-solid fa-book mr-1"></i> Reading
+        </button>
+        <button onclick="switchTab('results')" id="tabBtn-results" class="flex-1 py-2 px-3 text-xs font-bold rounded-xl transition bg-slate-200 text-slate-700">
+            <i class="fa-solid fa-chart-pie mr-1"></i> Natijalar
+        </button>
+    </div>
+
+    <!-- Main Content Areas -->
+    <main class="flex-1 px-4 py-3">
+
+        <!-- TAB 1: PLACEMENT TEST / GRAMMAR -->
+        <section id="tab-test" class="space-y-4">
+            <!-- Start Banner -->
+            <div id="testIntroCard" class="tg-card rounded-2xl p-5 border border-slate-200 shadow-sm text-center">
+                <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <h2 class="text-base font-extrabold mb-1">CEFR Darajangizni aniqlang</h2>
+                <p class="text-xs text-slate-500 mb-4">10 ta grammatika va so‘z boyligi savollari orqali darajangiz (A1, A2, B1) aniqlanadi.</p>
+                <button onclick="startPlacementTest()" class="w-full py-3 px-4 rounded-xl font-bold text-sm tg-btn-primary shadow-md active:scale-98 transition flex items-center justify-center space-x-2">
+                    <span>Testni boshlash</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Quiz Running Card -->
+            <div id="quizCard" class="hidden tg-card rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-400">
+                    <span id="questionStep">Savol 1 / 10</span>
+                    <span id="questionLvl" class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">A1</span>
+                </div>
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div id="progressBar" class="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" style="width: 10%"></div>
+                </div>
+
+                <div class="py-2">
+                    <h3 id="questionText" class="text-base font-bold text-slate-900 leading-snug">My name ___ Ali.</h3>
+                </div>
+
+                <div id="optionsContainer" class="space-y-2.5">
+                    <!-- Dynamic Options -->
+                </div>
+
+                <!-- Explanation Box -->
+                <div id="explanationBox" class="hidden text-xs p-3 rounded-xl border leading-relaxed"></div>
+            </div>
+
+            <!-- Test Summary Card -->
+            <div id="testResultCard" class="hidden tg-card rounded-2xl p-6 border border-slate-200 shadow-sm text-center space-y-4">
+                <div class="w-16 h-16 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl font-black">
+                    🏆
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Sizning natijangiz</span>
+                    <h2 class="text-2xl font-black text-slate-900 mt-1" id="finalLevelResult">Level: B1</h2>
+                    <p class="text-xs text-slate-500 mt-1" id="finalScoreDesc">10 ta savoldan 8 tasiga to‘g‘ri javob berdingiz.</p>
+                </div>
+                <div class="pt-2 flex space-x-2">
+                    <button onclick="startPlacementTest()" class="flex-1 py-2.5 rounded-xl border border-slate-300 text-xs font-bold active:scale-95 transition">Qayta topshirish</button>
+                    <button onclick="switchTab('reading')" class="flex-1 py-2.5 rounded-xl tg-btn-primary text-xs font-bold active:scale-95 transition shadow">Reading boshlash</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: READING MASHQLARI -->
+        <section id="tab-reading" class="hidden space-y-4">
+            <div id="readingList" class="space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Mavzuni tanlang</h3>
+                <!-- Reading Articles rendered dynamically -->
+            </div>
+
+            <div id="readingDetailCard" class="hidden tg-card rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                <button onclick="backToReadingList()" class="text-xs font-bold text-indigo-600 flex items-center space-x-1 mb-1">
+                    <i class="fa-solid fa-arrow-left"></i> <span>Mavzularga qaytish</span>
+                </button>
+                <h3 id="readingTitle" class="text-base font-extrabold text-slate-900"></h3>
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 leading-relaxed max-h-56 overflow-y-auto" id="readingBody"></div>
+
+                <div class="border-t border-slate-100 pt-3 space-y-3" id="readingQuestionsBox">
+                    <!-- Questions for reading -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: NATIJALAR & PROFIL -->
+        <section id="tab-results" class="hidden space-y-4">
+            <div class="tg-card rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Umumiy ko‘rsatkichlar</h3>
+                <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span class="text-xl font-black text-indigo-600" id="statCorrect">0</span>
+                        <p class="text-[11px] text-slate-500 font-semibold mt-0.5">To‘g‘ri javoblar</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span class="text-xl font-black text-rose-500" id="statWrong">0</span>
+                        <p class="text-[11px] text-slate-500 font-semibold mt-0.5">Xatolar</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tg-card rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">O‘quv Markazi Tizimi</h3>
+                <p class="text-xs text-slate-600">Siz ushbu natijalaringizni o‘quv markazingiz profiliga biriktirishingiz va sertifikat olishingiz mumkin.</p>
+                <a href="index.html" class="inline-flex w-full items-center justify-center py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-800 hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-desktop mr-1.5"></i> Platforma Dashboardini ochish
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Init Telegram WebApp
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            if (tg.initDataUnsafe?.user?.first_name) {
+                document.getElementById('userNameTitle').textContent = tg.initDataUnsafe.user.first_name;
+            }
+        }
+
+        function haptic(type = 'light') {
+            try { tg?.HapticFeedback?.impactOccurred(type); } catch(e){}
+        }
+
+        // Questions Data
+        const PLACEMENT = [
+            {q:"My name ___ Ali.",opts:["am","is","are","be"],a:1,lvl:"A1",e:'"I" → am, "he/she/it" → is, "we/they" → are'},
+            {q:"I ___ a student.",opts:["am","is","are","be"],a:0,lvl:"A1",e:'"I" bilan har doim "am" ishlatiladi.'},
+            {q:"She ___ two brothers.",opts:["have","has","having","had"],a:1,lvl:"A1",e:'"She" bilan hozirgi zamonda "has" ishlatiladi.'},
+            {q:"What color is grass?",opts:["Blue","Green","Red","Black"],a:1,lvl:"A1",e:"Grass (o't) yashil (Green) bo'ladi."},
+            {q:"Yesterday, I ___ to school.",opts:["go","goes","went","going"],a:2,lvl:"A2",e:'"Yesterday" o\'tgan zamon bo\'lib, "went" bo\'ladi.'},
+            {q:"He usually ___ breakfast at 7.",opts:["have","has","had","having"],a:1,lvl:"A2",e:'"He" bilan Present Simple\'da "has" ishlatiladi.'},
+            {q:"We were tired, ___ we went home early.",opts:["because","so","but","if"],a:1,lvl:"A2",e:'Natijani bildirish uchun "so" (shuning uchun) ishlatiladi.'},
+            {q:"If I have time, I ___ you.",opts:["call","called","will call","calling"],a:2,lvl:"B1",e:"First Conditional: if + Present Simple → will + verb."},
+            {q:"This book is ___ than the last one.",opts:["interesting","more interesting","most interesting","interest"],a:1,lvl:"B1",e:'Taqqoslashda "more interesting" bo\'ladi.'},
+            {q:"I have lived here ___ 2020.",opts:["for","since","during","from"],a:1,lvl:"B1",e:'Boshlanish nuqtasi bilan "since" ishlatiladi.'}
+        ];
+
+        const READINGS = [
+            {title:"My Family (A1)",lvl:"A1",text:"My name is Tom. I live with my mother, father, and little sister. My mother likes tea, and my father likes coffee. My sister likes the color pink.",qs:[
+                {q:"Who does Tom live with?",opts:["Friends","Family","Teacher","Neighbors"],a:1,e:"Tom o'z oilasi (family) bilan yashaydi."},
+                {q:"Tom's father likes coffee.",opts:["True ✅","False ❌"],a:0,e:"Ha, otasi qahvani yoqtiradi."}
+            ]},
+            {title:"A Busy Morning (A2)",lvl:"A2",text:"Last Monday, I woke up late because my alarm did not ring. I quickly got dressed and left home without breakfast. I missed the first bus, so I walked to the station.",qs:[
+                {q:"Why did the speaker wake up late?",opts:["Bus was late","Alarm did not ring","Sunday","Station closed"],a:1,e:"Uyg'otgich jiringlamagan."},
+                {q:"Did the speaker eat breakfast?",opts:["Yes","No"],a:1,e:"Nonushta qilmay shoshilib chiqib ketgan."}
+            ]}
+        ];
+
+        let curQ = 0;
+        let score = 0;
+        let stats = { correct: 0, wrong: 0 };
+
+        function switchTab(tab) {
+            haptic('selection');
+            ['test', 'reading', 'results'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`tabBtn-${t}`).className = 'flex-1 py-2 px-3 text-xs font-bold rounded-xl transition bg-slate-200 text-slate-700';
+            });
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`tabBtn-${tab}`).className = 'flex-1 py-2 px-3 text-xs font-bold rounded-xl transition tg-btn-primary shadow-xs';
+            if (tab === 'reading') renderReadingList();
+        }
+
+        function startPlacementTest() {
+            haptic('impact');
+            curQ = 0;
+            score = 0;
+            document.getElementById('testIntroCard').classList.add('hidden');
+            document.getElementById('testResultCard').classList.add('hidden');
+            document.getElementById('quizCard').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const item = PLACEMENT[curQ];
+            document.getElementById('questionStep').textContent = `Savol ${curQ + 1} / ${PLACEMENT.length}`;
+            document.getElementById('questionLvl').textContent = item.lvl;
+            document.getElementById('progressBar').style.width = `${((curQ + 1) / PLACEMENT.length) * 100}%`;
+            document.getElementById('questionText').textContent = item.q;
+            document.getElementById('explanationBox').classList.add('hidden');
+
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = item.opts.map((opt, i) => `
+                <button onclick="handleAnswer(${i})" class="w-full py-2.5 px-3.5 text-left text-xs font-semibold rounded-xl border border-slate-200 hover:border-indigo-500 bg-white active:bg-indigo-50 transition flex items-center justify-between">
+                    <span>${opt}</span>
+                    <i class="fa-regular fa-circle text-slate-300"></i>
+                </button>
+            `).join('');
+        }
+
+        function handleAnswer(choiceIdx) {
+            const item = PLACEMENT[curQ];
+            const isCorrect = choiceIdx === item.a;
+            const exp = document.getElementById('explanationBox');
+
+            if (isCorrect) {
+                haptic('success');
+                score++;
+                stats.correct++;
+                exp.className = 'text-xs p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 leading-relaxed block';
+                exp.innerHTML = `<b>To‘g‘ri!</b> 🎉 ${item.e}`;
+            } else {
+                haptic('warning');
+                stats.wrong++;
+                exp.className = 'text-xs p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 leading-relaxed block';
+                exp.innerHTML = `<b>Xato!</b> To‘g‘ri javob: <b>${item.opts[item.a]}</b>.<br>${item.e}`;
+            }
+
+            document.getElementById('scoreCounter').textContent = `${score * 10} ball`;
+            document.getElementById('statCorrect').textContent = stats.correct;
+            document.getElementById('statWrong').textContent = stats.wrong;
+
+            const buttons = document.querySelectorAll('#optionsContainer button');
+            buttons.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i === item.a) btn.className += ' !border-emerald-500 !bg-emerald-50 !text-emerald-900 font-bold';
+                else if (i === choiceIdx) btn.className += ' !border-rose-500 !bg-rose-50 !text-rose-900';
+            });
+
+            setTimeout(() => {
+                curQ++;
+                if (curQ < PLACEMENT.length) {
+                    renderQuestion();
+                } else {
+                    finishTest();
+                }
+            }, 1400);
+        }
+
+        function finishTest() {
+            document.getElementById('quizCard').classList.add('hidden');
+            document.getElementById('testResultCard').classList.remove('hidden');
+
+            let lvl = 'A1';
+            if (score >= 8) lvl = 'B1 (O‘rta)';
+            else if (score >= 5) lvl = 'A2 (Boshlang‘ich-2)';
+            else lvl = 'A1 (Boshlang‘ich-1)';
+
+            document.getElementById('finalLevelResult').textContent = `Daraja: ${lvl}`;
+            document.getElementById('userLevelBadge').textContent = `Daraja: ${lvl}`;
+            document.getElementById('finalScoreDesc').textContent = `10 ta savoldan ${score} tasiga to‘g‘ri javob berdingiz (${score * 10}%).`;
+        }
+
+        function renderReadingList() {
+            const list = document.getElementById('readingList');
+            list.innerHTML = READINGS.map((r, i) => `
+                <div onclick="openReading(${i})" class="tg-card p-4 rounded-xl border border-slate-200 hover:border-indigo-400 active:scale-98 transition cursor-pointer flex items-center justify-between shadow-xs">
+                    <div>
+                        <h4 class="font-bold text-xs text-slate-900">${r.title}</h4>
+                        <span class="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider">${r.lvl} Reading</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                </div>
+            `).join('');
+        }
+
+        function openReading(idx) {
+            haptic('selection');
+            const r = READINGS[idx];
+            document.getElementById('readingList').classList.add('hidden');
+            document.getElementById('readingDetailCard').classList.remove('hidden');
+            document.getElementById('readingTitle').textContent = r.title;
+            document.getElementById('readingBody').textContent = r.text;
+
+            const qBox = document.getElementById('readingQuestionsBox');
+            qBox.innerHTML = r.qs.map((q, qi) => `
+                <div class="space-y-2">
+                    <p class="text-xs font-bold text-slate-900">${qi + 1}. ${q.q}</p>
+                    <div class="space-y-1.5">
+                        ${q.opts.map((opt, oi) => `
+                            <button onclick="checkReadingQ(${idx}, ${qi}, ${oi}, this)" class="w-full text-left py-2 px-3 text-xs font-semibold rounded-lg border border-slate-200 bg-white active:bg-slate-100 transition">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function checkReadingQ(rIdx, qIdx, optIdx, btn) {
+            const q = READINGS[rIdx].qs[qIdx];
+            const isCorrect = optIdx === q.a;
+            if (isCorrect) {
+                haptic('success');
+                btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg border border-emerald-500 bg-emerald-50 text-emerald-900';
+            } else {
+                haptic('warning');
+                btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg border border-rose-500 bg-rose-50 text-rose-900';
+            }
+        }
+
+        function backToReadingList() {
+            haptic('selection');
+            document.getElementById('readingDetailCard').classList.add('hidden');
+            document.getElementById('readingList').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
